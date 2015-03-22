@@ -1,20 +1,19 @@
-trait IntMapSig {
+trait IntMap {
   type Apply
   type T[_]
 
-  def e[A](i: Int): T[A]
-  def app[A](f: T[A]): T[A]
-  def extend[A](a: Int, b: A)(f: => T[A])(i: Int): A
+  def empty[A]: T[A]
+  def get[A](i: Int)(x: T[A]): A
+  def insert[A](k: Int, v: A)(x: T[A]): T[A]
 }
 
-object IntMap extends IntMapSig {
+object IntFunMap extends IntMap {
   case class Apply() extends Exception()
   type T[A] = Int => A
 
-  def e[A](i: Int) = throw Apply()
-  def app[A](f: T[A]) = f
-
-  def extend[A](a: Int, b: A)(f: => T[A])(i: Int) =
-    if (i == a) b else app(f)(i)
+  def empty[A] = i => throw Apply()
+  def get[A](i: Int)(x: T[A]) = x(i)
+  def insert[A](k: Int, v: A)(x: T[A]) =
+    i => if (i == k) v else get(i)(x)
 }
 
