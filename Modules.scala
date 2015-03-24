@@ -1,21 +1,20 @@
 import scala.language.higherKinds
 
 object Modules {
-  trait Graph {
-    type V
+  trait Graph[A] {
     type E
     type T
 
-    def nodes(t: T): Set[V]
+    def nodes(t: T): Set[A]
     def edges(t: T): Set[E]
     def empty: T
-    def create(vs: Set[V], es: Set[E]): T
-    def insert(v1: V, v2: V)(t: T): T
+    def create(vs: Set[A], es: Set[E]): T
+    def insert(v1: A, v2: A)(t: T): T
   }
 
-  trait MapGraph extends Graph {
-    type E = (V, V)
-    type T = Map[V, Set[V]]
+  trait MapGraph[A] extends Graph[A] {
+    type E = (A, A)
+    type T = Map[A, Set[A]]
 
     override def nodes(t: T) = t.keySet
 
@@ -26,13 +25,13 @@ object Modules {
 
     override def empty = Map.empty
 
-    override def create(vs: Set[V], es: Set[E]) = {
+    override def create(vs: Set[A], es: Set[E]) = {
       val vertexesEdges =
         for (v <- vs; (v1, v2) <- es if v == v1) yield (v1, v2)
       vertexesEdges.groupBy(_._1).mapValues(_.map(_._2).toSet)
     }
 
-    override def insert(v1: V, v2: V)(t: T) = {
+    override def insert(v1: A, v2: A)(t: T) = {
       val otherVertexes = t.get(v1)
 
       otherVertexes match {
@@ -42,7 +41,7 @@ object Modules {
     }
   }
 
-  val IntMapGraph: Graph = new MapGraph { type V = Int }
+  val IntMapGraph: Graph[Int] = new MapGraph[Int] {}
 
   trait IntMap[A] {
     type Apply
@@ -63,29 +62,28 @@ object Modules {
       (i: Int) => if (i == k) v else get(i)(x)
   }
 
+  /*
+  Can't create instance of IntFunMap because it's abstract--unless we
+  give it an empty body. Then it becomes an anonymous inner class that
+  doesn't need to implement anything in its body because all its methods
+  are already implemented in the trait.
+  */
   val IntStringFunMap: IntMap[String] = new IntFunMap[String] {}
-  //val IntStringFunMap = new IntFunMap { type A = String }
 
-  trait Group {
-    type T
-
-    def empty: T
-    def op(t1: T, t2: T): T
-    def inverse(t: T): T
+  trait Group[A] {
+    def empty: A
+    def op(t1: A, t2: A): A
+    def inverse(t: A): A
   }
 
-  // Group of integers over addition.
-  val Z: Group = new Group {
-    type T = Int
-
+  // Group of addition over integers.
+  val Z: Group[A] = new Group[Int] {
     override def empty = 0
-    override def op(t1: T, t2: T) = t1 + t2
-    override def inverse(t: T) = -t
+    override def op(t1: A, t2: A) = t1 + t2
+    override def inverse(t: A) = -t
   }
 
-  class PairG(val Gr: Group) extends Group {
-    type T = (Gr.T, Gr.T)
-
+  class PairG(val Gr: Group) extends Group[(Gr.T, Gr.T)] {
     override def empty = (Gr.empty, Gr.empty)
 
     override def op(t1: T, t2: T) =
