@@ -139,21 +139,23 @@ object Modules {
 
       override val empty = Leaf
 
-      override def insert(e: E)(t: T) = t match {
-        case Leaf => Branch(Leaf, e, Leaf)
-        case Branch(l, x, r) =>
-          if (o.compare(e, x) < 0) Branch(insert(e)(l), x, r)
-          else if (o.compare(e, x) > 0) Branch(l, x, insert(e)(r))
-          else t
-      }
+      override def insert(e: E)(t: T) =
+        t match {
+          case Leaf => Branch(Leaf, e, Leaf)
+          case Branch(l, x, r) =>
+            if (o.compare(e, x) < 0) Branch(insert(e)(l), x, r)
+            else if (o.compare(e, x) > 0) Branch(l, x, insert(e)(r))
+            else t
+        }
 
-      override def member(e: E)(t: T) = t match {
-        case Leaf => false
-        case Branch(l, x, r) =>
-          if (o.compare(e, x) < 0) member(e)(l)
-          else if (o.compare(e, x) > 0) member(e)(r)
-          else true
-      }
+      override def member(e: E)(t: T) =
+        t match {
+          case Leaf => false
+          case Branch(l, x, r) =>
+            if (o.compare(e, x) < 0) member(e)(l)
+            else if (o.compare(e, x) > 0) member(e)(r)
+            else true
+        }
     }
 
   // UIS = UnbalancedIntSet
