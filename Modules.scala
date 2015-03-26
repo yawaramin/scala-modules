@@ -5,9 +5,9 @@ object Modules {
     type E
     type T
 
+    val empty: T
     def nodes(t: T): Set[A]
     def edges(t: T): Set[E]
-    def empty: T
     def create(vs: Set[A], es: Set[E]): T
     def insert(v1: A, v2: A)(t: T): T
   }
@@ -16,14 +16,14 @@ object Modules {
     type E = (A, A)
     type T = Map[A, Set[A]]
 
+    override val empty: T = Map.empty
+
     override def nodes(t: T) = t.keySet
 
     override def edges(t: T) = {
       val pairs = for (v1 <- t.keys; v2 <- t(v1)) yield (v1, v2)
       pairs.toSet
     }
-
-    override def empty = Map.empty
 
     override def create(vs: Set[A], es: Set[E]) = {
       val vertexesEdges =
@@ -47,7 +47,7 @@ object Modules {
     type Apply
     type T[_]
 
-    def empty: T[A]
+    val empty: T[A]
     def get(i: Int)(x: T[A]): A
     def insert(k: Int, v: A)(x: T[A]): T[A]
   }
@@ -56,7 +56,7 @@ object Modules {
     case class Apply() extends Exception()
     type T[A] = Int => A
 
-    override def empty = (i: Int) => throw Apply()
+    override val empty = (i: Int) => throw Apply()
     override def get(i: Int)(x: T[A]) = x(i)
     override def insert(k: Int, v: A)(x: T[A]) =
       (i: Int) => if (i == k) v else get(i)(x)
@@ -71,27 +71,30 @@ object Modules {
   val IntStringFunMap: IntMap[String] = new IntFunMap[String] {}
 
   trait Group[A] {
-    def empty: A
+    val empty: A
     def op(t1: A, t2: A): A
     def inverse(t: A): A
   }
 
   // Group of addition over integers.
-  val Z: Group[A] = new Group[Int] {
-    override def empty = 0
-    override def op(t1: A, t2: A) = t1 + t2
-    override def inverse(t: A) = -t
+  val Z: Group[Int] = new Group[Int] {
+    override val empty = 0
+    override def op(t1: Int, t2: Int) = t1 + t2
+    override def inverse(t: Int) = -t
   }
 
-  class PairG(val Gr: Group) extends Group[(Gr.T, Gr.T)] {
-    override def empty = (Gr.empty, Gr.empty)
+  def PairG[A](g: Group[A]) =
+    new Group[Tuple2[A, A]] {
+      override val empty = (g.empty, g.empty)
 
-    override def op(t1: T, t2: T) =
-      (Gr.op(t1._1, t2._1), Gr.op(t1._2, t2._2))
+      override def op(t1: Tuple2[A, A], t2: Tuple2[A, A]) =
+        (g.op(t1._1, t2._1), g.op(t2._1, t2._2))
 
-    override def inverse(t: T) = (Gr.inverse(t._1), Gr.inverse(t._2))
-  }
+      override def inverse(t: Tuple2[A, A]) =
+        (g.inverse(t._1), g.inverse(t._2))
+    }
 
-  val IntPairG: Group = new PairG(Z)
+  // Group of addition over pairs of integers.
+  val IntPairG: Group[Tuple2[Int, Int]] = PairG(Z)
 }
 
