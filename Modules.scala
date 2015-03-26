@@ -41,7 +41,8 @@ object Modules {
     }
   }
 
-  val IntMapGraph: Graph[Int] = new MapGraph[Int] {}
+  // IMG = IntMapGraph
+  val IMG: Graph[Int] = new MapGraph[Int] {}
 
   trait IntMap[A] {
     type Apply
@@ -50,6 +51,7 @@ object Modules {
     val empty: T[A]
     def get(i: Int)(x: T[A]): A
     def insert(k: Int, v: A)(x: T[A]): T[A]
+    def remove(k: Int)(x: T[A]): T[A]
   }
 
   trait IntFunMap[A] extends IntMap[A] {
@@ -57,9 +59,14 @@ object Modules {
     type T[A] = Int => A
 
     override val empty = (i: Int) => throw Apply()
+
     override def get(i: Int)(x: T[A]) = x(i)
+
     override def insert(k: Int, v: A)(x: T[A]) =
       (i: Int) => if (i == k) v else get(i)(x)
+
+    override def remove(k: Int)(x: T[A]) =
+      (i: Int) => if (i == k) throw Apply() else get(i)(x)
   }
 
   /*
@@ -67,8 +74,10 @@ object Modules {
   give it an empty body. Then it becomes an anonymous inner class that
   doesn't need to implement anything in its body because all its methods
   are already implemented in the trait.
+
+  ISFM = IntStringFunMap
   */
-  val IntStringFunMap: IntMap[String] = new IntFunMap[String] {}
+  val ISFM: IntMap[String] = new IntFunMap[String] {}
 
   trait Group[A] {
     val empty: A
@@ -94,7 +103,11 @@ object Modules {
         (g.inverse(t._1), g.inverse(t._2))
     }
 
-  // Group of addition over pairs of integers.
-  val IntPairG: Group[Tuple2[Int, Int]] = PairG(Z)
+  /*
+  Group of addition over pairs of integers.
+
+  IPG = IntPairG
+  */
+  val IPG: Group[Tuple2[Int, Int]] = PairG(Z)
 }
 
