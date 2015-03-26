@@ -80,34 +80,83 @@ object Modules {
   val ISFM: IntMap[String] = new IntFunMap[String] {}
 
   trait Group[A] {
-    val empty: A
-    def op(t1: A, t2: A): A
-    def inverse(t: A): A
+    type T = A
+
+    val empty: T
+    def op(t1: T, t2: T): T
+    def inverse(t: T): T
   }
 
-  // Group of addition over integers.
-  val Z: Group[Int] = new Group[Int] {
+  // Group of integers under addition.
+  val Z = new Group[Int] {
     override val empty = 0
-    override def op(t1: Int, t2: Int) = t1 + t2
-    override def inverse(t: Int) = -t
+    override def op(t1: T, t2: T) = t1 + t2
+    override def inverse(t: T) = -t
   }
 
   def PairG[A](g: Group[A]) =
     new Group[Tuple2[A, A]] {
       override val empty = (g.empty, g.empty)
 
-      override def op(t1: Tuple2[A, A], t2: Tuple2[A, A]) =
-        (g.op(t1._1, t2._1), g.op(t2._1, t2._2))
+      override def op(t1: T, t2: T) =
+        (g.op(t1._1, t2._1), g.op(t1._2, t2._2))
 
-      override def inverse(t: Tuple2[A, A]) =
+      override def inverse(t: T) =
         (g.inverse(t._1), g.inverse(t._2))
     }
 
   /*
-  Group of addition over pairs of integers.
+  Group of pairs of integers under element-wise addition.
 
   IPG = IntPairG
   */
   val IPG: Group[Tuple2[Int, Int]] = PairG(Z)
+
+  trait Ordered[A] {
+    type T = A
+
+    def compare(t1: T, t2: T): Int
+  }
+
+  val IntOrdered = new Ordered[Int] {
+    override def compare(t1: T, t2: T) = t1 - t2
+  }
+
+  trait MySet[A] {
+    type E = A
+    type T
+
+    val empty: T
+    def insert(e: E)(t: T): T
+    def member(e: E)(t: T): Boolean
+  }
+
+  def UnbalancedSet[A](o: Ordered[A]) =
+    new MySet[A] {
+      sealed trait T
+      case object Leaf extends T
+      case class Branch(left: T, e: E, right: T) extends T
+
+      override val empty = Leaf
+
+      override def insert(e: E)(t: T) = t match {
+        case Leaf => Branch(Leaf, e, Leaf)
+        case Branch(l, x, r) =>
+          if (o.compare(e, x) < 0) Branch(insert(e)(l), x, r)
+          else if (o.compare(e, x) > 0) Branch(l, x, insert(e)(r))
+          else t
+      }
+
+      override def member(e: E)(t: T) = t match {
+        case Leaf => false
+        case Branch(l, x, r) =>
+          if (o.compare(e, x) < 0) member(e)(l)
+          else if (o.compare(e, x) > 0) member(e)(r)
+          else true
+      }
+    }
+
+  // UIS = UnbalancedIntSet
+  val UIS: MySet[Int] = UnbalancedSet(IntOrdered)
 }
 
