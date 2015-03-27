@@ -94,15 +94,15 @@ object Modules {
     override def inverse(t: T) = -t
   }
 
-  def PairG[A](g: Group[A]) =
+  def PairG[A](G: Group[A]) =
     new Group[Tuple2[A, A]] {
-      override val empty = (g.empty, g.empty)
+      override val empty = (G.empty, G.empty)
 
       override def op(t1: T, t2: T) =
-        (g.op(t1._1, t2._1), g.op(t1._2, t2._2))
+        (G.op(t1._1, t2._1), G.op(t1._2, t2._2))
 
       override def inverse(t: T) =
-        (g.inverse(t._1), g.inverse(t._2))
+        (G.inverse(t._1), G.inverse(t._2))
     }
 
   /*
@@ -131,7 +131,7 @@ object Modules {
     def member(e: E)(t: T): Boolean
   }
 
-  def UnbalancedSet[A](o: Ordered[A]) =
+  def UnbalancedSet[A](O: Ordered[A]) =
     new MySet[A] {
       sealed trait T
       case object Leaf extends T
@@ -143,8 +143,10 @@ object Modules {
         t match {
           case Leaf => Branch(Leaf, e, Leaf)
           case Branch(l, x, r) =>
-            if (o.compare(e, x) < 0) Branch(insert(e)(l), x, r)
-            else if (o.compare(e, x) > 0) Branch(l, x, insert(e)(r))
+            val comp = O.compare(e, x)
+
+            if (comp < 0) Branch(insert(e)(l), x, r)
+            else if (comp > 0) Branch(l, x, insert(e)(r))
             else t
         }
 
@@ -152,8 +154,10 @@ object Modules {
         t match {
           case Leaf => false
           case Branch(l, x, r) =>
-            if (o.compare(e, x) < 0) member(e)(l)
-            else if (o.compare(e, x) > 0) member(e)(r)
+            val comp = O.compare(e, x)
+
+            if (comp < 0) member(e)(l)
+            else if (comp > 0) member(e)(r)
             else true
         }
     }
