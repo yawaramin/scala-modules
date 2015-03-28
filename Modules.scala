@@ -40,29 +40,14 @@ trait MapGraph[A] extends Graph[A] {
   }
 }
 
-trait IntMap[A] {
-  type Apply
+trait IntMap {
+  type NotFound
   type T[_]
 
-  val empty: T[A]
-  def get(i: Int)(x: T[A]): A
-  def insert(k: Int, v: A)(x: T[A]): T[A]
-  def remove(k: Int)(x: T[A]): T[A]
-}
-
-trait IntFunMap[A] extends IntMap[A] {
-  case class Apply() extends Exception()
-  type T[A] = Int => A
-
-  override val empty = (i: Int) => throw Apply()
-
-  override def get(i: Int)(x: T[A]) = x(i)
-
-  override def insert(k: Int, v: A)(x: T[A]) =
-    (i: Int) => if (i == k) v else get(i)(x)
-
-  override def remove(k: Int)(x: T[A]) =
-    (i: Int) => if (i == k) throw Apply() else get(i)(x)
+  def empty[A]: T[A]
+  def get[A](i: Int)(x: T[A]): A
+  def insert[A](k: Int, v: A)(x: T[A]): T[A]
+  def remove[A](k: Int)(x: T[A]): T[A]
 }
 
 trait Group[A] {
@@ -92,15 +77,20 @@ object Modules {
   // IMG = IntMapGraph
   val IMG: Graph[Int] = new MapGraph[Int] {}
 
-  /*
-  Can't create instance of IntFunMap because it's abstract--unless we
-  give it an empty body. Then it becomes an anonymous inner class that
-  doesn't need to implement anything in its body because all its methods
-  are already implemented in the trait.
+  val IntFn: IntMap = new IntMap {
+    case class NotFound() extends Exception()
+    type T[A] = Int => A
 
-  ISFM = IntStringFunMap
-  */
-  val ISFM: IntMap[String] = new IntFunMap[String] {}
+    override def empty[A]: T[A] = (i: Int) => throw NotFound()
+
+    override def get[A](i: Int)(x: T[A]) = x(i)
+
+    override def insert[A](k: Int, v: A)(x: T[A]) =
+      (i: Int) => if (i == k) v else get(i)(x)
+
+    override def remove[A](k: Int)(x: T[A]) =
+      (i: Int) => if (i == k) empty(i) else get(i)(x)
+  }
 
   // Group of integers under addition.
   val Z = new Group[Int] {
