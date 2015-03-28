@@ -59,6 +59,9 @@ to take away the following main points:
     `newtype B = Int` creating two completely distinct types `A` and `B`
     despite being literally the same type.
 
+  - SML functors are actually modelled using formal logic techniques
+    which I won't pretend to understand--just appreciate.
+
   - It's possible and sometimes even desirable to get different results
     from two modules which have been created by the same functor. This
     despite the general idea behind functors being to abstract
@@ -94,11 +97,9 @@ structure IntFn =              | object IntFn {
   end;                         |
 ```
 
-With this implementation, you can do things like (it helps to read from
-right to left, or in other words, we really need a pipe-forward operator
-in Scala):
+With this implementation, you can do things like:
 
-    scala> IntFn.get(1)(IntFn.insert(1, "a")(IntFn.empty))
+    scala> (IntFn.insert(1, "a") _ andThen IntFn.get(1) _) { IntFn.empty }
     res7: String = a
 
 A few points to take away from this:
@@ -108,16 +109,21 @@ A few points to take away from this:
     elsewhere, as we will see later.
 
   - Scala is a _lot_ denser than SML for the equivalent functionality.
-    One could charitably say that Scala optimises for something other
-    than curried methods.
+    To me, this is mostly a result of Scala's weaker type inference that
+    forces us to specify a lot more.
 
-  - Surprisingly, though, Scala is on par with SML in terms of line
-    count. Admittedly this isn't a very strong point.
+  - Scala doesn't really optimise for using curried functions, so if we
+    want to use that style function composition using `andThen` is the
+    [most idiomatic](http://stackoverflow.com/a/20574722/20371) way to
+    do it. In OCaml or F# we could use the 'forward-pipe' operator
+    (`|>`). Note that we can define a forward-pipe operator in Scala
+    (and people have); but the implementation isn't something you want
+    running in production.
 
 ## The Module Signature
 
 The next step in the evolution of a module is usually to extract its
-signature and re-implement it in terms of its signature:
+signature:
 
 ```
 signature INTMAP =                       | import scala.language.higherKinds
@@ -141,16 +147,94 @@ Now we start making some trade-offs in Scala. Some points to take away:
     unknown type as a parameter, and so we have to now enable
     higher-kinded types.
 
-    Cleaning out the method signatures isn't the only reason we want to
-    move the type parameter `A` out to the trait, however. I'll fully
-    explain this later, but for now notice that any object that
-    ultimately implements this trait will have a concrete type passed in
-    to it and will in turn pass in that concrete type to the member
-    values and methods under the alias of `A`.
-
   - We express `empty` as a `val` instead of as a `def` because we want
     it to return the exact same thing each time; so no need for a
     function call to do that. We couldn't do this with the object
     version before because `val`s can't accept type parameters
-    (this is a hard fact of Scala syntax).
+    (this is a hard fact of Scala syntax). This also forces us to move
+    out the type parameter to the trait, so that it's in scope by the
+    time we start declaring `empty`.
+
+After that, the next step is to express the module's implementation in
+terms of the signature:
+
+```
+structure IntFn :> INTMAP =    | trait IntFn[A] extends IntMap[A] {
+  struct                       |   case class NotFound() extends Exception()
+    exception NotFound         |   type T[A] = Int => A
+    type 'a t = int -> 'a      |
+                               |   override val empty =
+    fun empty i =              |     (i: Int) => throw Apply()
+      raise NotFound           |
+                               |   override def get(i: Int)(x: T[A]) = x(i)
+    fun get i x = x i          |
+                               |   override def insert(k: Int, v: A)(x: T[A]) =
+    fun insert (k, v) x i =    |     (i: Int) =>
+      if i = k                 |       if (i == k) v else get(i)(x)
+        then v                 | }
+        else get i x           |
+  end;                         |
+```
+
+Can you tell the crucial difference between the original SML and the
+Scala translation? Hint: it's right at the first word of the first line
+of each definition.
+
+We express the SML module directly as a concrete structure, while we
+express the Scala module as an abstract trait that takes a type
+parameter. Remember how we mentioned earlier that in the Scala version
+we needed to pass in a type parameter? The basic reasons are that _any_
+value in an SML module can be generic, but only methods in Scala
+traits/classes can be; and that making all methods in a trait generic
+leads to very dense-looking code that we want to avoid.
+
+Well, as a consequence of that decision, we also aren't able to directly
+create a module (i.e., a Scala object) that can work on any given type.
+Scala objects can't take type parameters; they can only be instantiated
+with concrete types. (If I'm wrong about this, I haven't seen any
+evidence of it yet.)
+
+So, we have to define something which _can_ take a type parameter; and
+the choices are a trait or a class (if we're defining something at the
+toplevel, that is). I went with a trait partly to minimise the number of
+different concepts I use, and partly to emphasise the abstract nature of
+this 'module template', if you will.
+
+Now, we can instantiate _concrete_ Scala modules (objects) with a type
+parameter of our choosing, and within some scope (not at the toplevel):
+
+```scala
+object MyCode {
+  val IntStrFn: IntMap[String] = new IntFn[String] {}
+
+  (IntStrFn.insert(1, "a") _ andThen IntStrFn.get(1) _) {
+    IntStrFn.empty
+  }
+}
+```
+
+Notice how:
+
+  - We constraint the `IntStrFn` module to only expose the `IntMap`
+    interface, just as we constrained the SML `IntFn` module to only
+    expose the `INTMAP` interface using the constraint operator `:>`.
+
+  - The Scala implementation ends up using two traits for two levels of
+    abstraction (the module interface and the implementation using a
+    representation of composed functions), which is somewhat sensible in
+    a way.
+
+  - We used `override` extensively in the `IntFn` trait to enable
+    C++-style virtual method dispatch for when we're holding several
+    different `IntMap` instances with different concrete implementations
+    and we want to operate on all of them uniformly and have them just
+    do the right thing automatically.
+
+  - We implemented the `IntStrFn` module as actually an anonymous class
+    that extends the `IntFn` trait and passes in the concrete type as
+    the parameter.
+
+TODO: mention Prof. Dan Grossman's excellent course using SML and his
+explanations of data type abstraction:
+http://courses.cs.washington.edu/courses/cse341/13sp/unit4notes.pdf
 
