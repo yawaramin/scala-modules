@@ -97,7 +97,7 @@ structure IntFn =              | object IntFn {
   end;                         |
 ```
 
-With this implementation, you can do things like:
+With this implementation, we can do things like:
 
     scala> (IntFn.insert(1, "a") _ andThen IntFn.get(1) _) { IntFn.empty }
     res7: String = a
@@ -108,17 +108,17 @@ A few points to take away from this:
     really clunky, unless you manage to define the type parameter
     elsewhere, as we will see later.
 
-  - Scala is a _lot_ denser than SML for the equivalent functionality.
+  - Scala is somewhat denser than SML for the equivalent functionality.
     To me, this is mostly a result of Scala's weaker type inference that
     forces us to specify a lot more.
 
   - Scala doesn't really optimise for using curried functions, so if we
-    want to use that style function composition using `andThen` is the
-    [most idiomatic](http://stackoverflow.com/a/20574722/20371) way to
-    do it. In OCaml or F# we could use the 'forward-pipe' operator
-    (`|>`). Note that we can define a forward-pipe operator in Scala
-    (and people have); but the implementation isn't something you want
-    running in production.
+    want to use that style function composition using `andThen` and
+    partial application is the [most
+    idiomatic](http://stackoverflow.com/a/20574722/20371) way to do it.
+    In OCaml or F# we could use the 'forward-pipe' operator (`|>`). We
+    can define a forward-pipe operator in Scala (and people have); but
+    the implementation isn't something you want running in production.
 
 ## The Module Signature
 
@@ -164,7 +164,7 @@ structure IntFn :> INTMAP =    | trait IntFn[A] extends IntMap[A] {
     exception NotFound         |   type T[A] = Int => A
     type 'a t = int -> 'a      |
                                |   override val empty =
-    fun empty i =              |     (i: Int) => throw Apply()
+    fun empty i =              |     (i: Int) => throw NotFound()
       raise NotFound           |
                                |   override def get(i: Int)(x: T[A]) = x(i)
     fun get i x = x i          |
@@ -183,16 +183,17 @@ of each definition.
 We express the SML module directly as a concrete structure, while we
 express the Scala module as an abstract trait that takes a type
 parameter. Remember how we mentioned earlier that in the Scala version
-we needed to pass in a type parameter? The basic reasons are that _any_
-value in an SML module can be generic, but only methods in Scala
-traits/classes can be; and that making all methods in a trait generic
-leads to very dense-looking code that we want to avoid.
+we needed to pass in a type parameter? I mentioned some basic reasons
+earlier, but there are better reasons that that we'll explore later. For
+now, I'll mention that we want Scala modules to be as flexible as
+possible, and that leads to design decisions that inevitably lead us to
+passing in type parameters.
 
-Well, as a consequence of that decision, we also aren't able to directly
-create a module (i.e., a Scala object) that can work on any given type.
-Scala objects can't take type parameters; they can only be instantiated
-with concrete types. (If I'm wrong about this, I haven't seen any
-evidence of it yet.)
+Well, as a consequence of these decisions, we also aren't able to
+directly create a module (i.e., a Scala object) that can work on any
+given type. Scala objects can't take type parameters; they can only be
+instantiated with concrete types (well, unless you use existential
+types, which is advanced type hackery that I want to avoid).
 
 So, we have to define something which _can_ take a type parameter; and
 the choices are a trait or a class (if we're defining something at the
@@ -207,7 +208,7 @@ parameter of our choosing, and within some scope (not at the toplevel):
 object MyCode {
   val IntStrFn: IntMap[String] = new IntFn[String] {}
 
-  (IntStrFn.insert(1, "a") _ andThen IntStrFn.get(1) _) {
+  (IntStrFn.insert(1, "a") _ andThen IntStrFn.get(1) _ andThen print) {
     IntStrFn.empty
   }
 }
@@ -215,26 +216,31 @@ object MyCode {
 
 Notice how:
 
-  - We constraint the `IntStrFn` module to only expose the `IntMap`
+  - We constrain the `IntStrFn` module to only expose the `IntMap`
     interface, just as we constrained the SML `IntFn` module to only
-    expose the `INTMAP` interface using the constraint operator `:>`.
+    expose the `INTMAP` signature using the constraint operator `:>`.
 
   - The Scala implementation ends up using two traits for two levels of
     abstraction (the module interface and the implementation using a
-    representation of composed functions), which is somewhat sensible in
-    a way.
+    representation of composed functions), which is somewhat sensible.
 
-  - We used `override` extensively in the `IntFn` trait to enable
+  - We use `override` extensively in the `IntFn` trait to enable
     C++-style virtual method dispatch for when we're holding several
     different `IntMap` instances with different concrete implementations
     and we want to operate on all of them uniformly and have them just
     do the right thing automatically.
 
-  - We implemented the `IntStrFn` module as actually an anonymous class
+  - We implement the `IntStrFn` module as actually an anonymous class
     that extends the `IntFn` trait and passes in the concrete type as
-    the parameter.
+    the parameter. The class has an empty body because it extends a
+    trait which defines all its methods and values already.
 
 TODO: mention Prof. Dan Grossman's excellent course using SML and his
 explanations of data type abstraction:
 http://courses.cs.washington.edu/courses/cse341/13sp/unit4notes.pdf
+
+TODO: mention push-pull of needing to be able to pass in concrete values
+into functions that are typed as taking abstract types; and of needing
+to be able to create abstract type aliases that refer to trait type
+parameters.
 
