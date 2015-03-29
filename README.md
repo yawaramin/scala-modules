@@ -83,20 +83,20 @@ words, a vector. On a side note, the interesting thing about this data
 structure is that it's implemented purely using function
 composition.
 
-```
-structure IntFn =              | object IntFn {
-  struct                       |   case class NotFound() extends Exception()
-    exception NotFound         |   type T[A] = Int => A
-    type 'a t = int -> 'a      |
-                               |   def empty[A]: T[A] =
-    fun empty i =              |     (i: Int) => throw NotFound()
-      raise NotFound           |
-                               |   def get[A](i: Int)(x: T[A]) = x(i)
-    fun get i x = x i          |
-                               |   def insert[A](k: Int, v: A)(x: T[A]) =
-    fun insert (k, v) x i =    |     (i: Int) => if (i == k) v else get(i)(x)
-      if i = k then v else x i | }
-  end;                         |
+```scala
+/* structure IntFn =              */ object IntFn {
+/*   struct                       */   case class NotFound() extends Exception()
+/*     exception NotFound         */   type T[A] = Int => A
+/*     type 'a t = int -> 'a      */
+/*                                */   def empty[A]: T[A] =
+/*     fun empty i =              */     (i: Int) => throw NotFound()
+/*       raise NotFound           */
+/*                                */   def get[A](i: Int)(x: T[A]) = x(i)
+/*     fun get i x = x i          */
+/*                                */   def insert[A](k: Int, v: A)(x: T[A]) =
+/*     fun insert (k, v) x i =    */     (i: Int) => if (i == k) v else get(i)(x)
+/*       if i = k then v else x i */ }
+/*   end;                         */
 ```
 
 With this implementation, we can do things like:
@@ -127,17 +127,17 @@ A few points to take away from this:
 The next step in the evolution of a module is usually to extract its
 signature:
 
-```
-signature INTMAP =                       | import scala.language.higherKinds
-  sig                                    |
-    exception NotFound                   | trait IntMap[A] {
-    type 'a t                            |   type NotFound
-                                         |   type T[_]
-    val empty: 'a t                      |
-    val get: int -> 'a t -> 'a           |   val empty: T[A]
-    val insert: int * 'a -> 'a t -> 'a t |   def get(i: Int)(x: T[A]): A
-  end;                                   |   def insert(k: Int, v: A)(x: T[A]): T[A]
-                                         | }
+```scala
+/* signature INTMAP =                       */ import scala.language.higherKinds
+/*   sig                                    */
+/*     exception NotFound                   */ trait IntMap[A] {
+/*     type 'a t                            */   type NotFound
+/*                                          */   type T[_]
+/*     val empty: 'a t                      */
+/*     val get: int -> 'a t -> 'a           */   val empty: T[A]
+/*     val insert: int * 'a -> 'a t -> 'a t */   def get(i: Int)(x: T[A]): A
+/*   end;                                   */   def insert(k: Int, v: A)(x: T[A]): T[A]
+/*                                          */ }
 ```
 
 Now we start making some trade-offs in Scala. Some points to take away:
@@ -160,22 +160,22 @@ Now we start making some trade-offs in Scala. Some points to take away:
 After that, the next step is to express the module's implementation in
 terms of the signature:
 
-```
-structure IntFn :> INTMAP =    | trait IntFn[A] extends IntMap[A] {
-  struct                       |   case class NotFound() extends Exception()
-    exception NotFound         |   type T[A] = Int => A
-    type 'a t = int -> 'a      |
-                               |   override val empty =
-    fun empty i =              |     (i: Int) => throw NotFound()
-      raise NotFound           |
-                               |   override def get(i: Int)(x: T[A]) = x(i)
-    fun get i x = x i          |
-                               |   override def insert(k: Int, v: A)(x: T[A]) =
-    fun insert (k, v) x i =    |     (i: Int) =>
-      if i = k                 |       if (i == k) v else get(i)(x)
-        then v                 | }
-        else get i x           |
-  end;                         |
+```scala
+/* structure IntFn :> INTMAP =    */ trait IntFn[A] extends IntMap[A] {
+/*   struct                       */   case class NotFound() extends Exception()
+/*     exception NotFound         */   type T[A] = Int => A
+/*     type 'a t = int -> 'a      */
+/*                                */   override val empty =
+/*     fun empty i =              */     (i: Int) => throw NotFound()
+/*       raise NotFound           */
+/*                                */   override def get(i: Int)(x: T[A]) = x(i)
+/*     fun get i x = x i          */
+/*                                */   override def insert(k: Int, v: A)(x: T[A]) =
+/*     fun insert (k, v) x i =    */     (i: Int) =>
+/*       if i = k                 */       if (i == k) v else get(i)(x)
+/*         then v                 */ }
+/*         else get i x           */
+/*   end;                         */
 ```
 
 Can you tell the crucial difference between the original SML and the
