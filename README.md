@@ -1,5 +1,7 @@
 # Exploring ML-Style Modular Programming in Scala
 
+(DRAFT)
+
 I recently watched a [talk by Martin
 Odersky](https://www.youtube.com/watch?v=P8jrvyxHodU) in which he boils
 Scala down to what he considers to be the essential parts of the
@@ -78,7 +80,7 @@ Modules](http://www.itu.dk/courses/FDP/E2004/Tofte-1996-Essentials_of_SML_Module
 (PDF), which explains SML modules from the ground up. It implements a
 _finite map_ from integers to values of some arbitrary type. In other
 words, a vector. On a side note, the interesting thing about this data
-structure is that it's implemented completely using function
+structure is that it's implemented purely using function
 composition.
 
 ```
@@ -218,7 +220,17 @@ Notice how:
 
   - We constrain the `IntStrFn` module to only expose the `IntMap`
     interface, just as we constrained the SML `IntFn` module to only
-    expose the `INTMAP` signature using the constraint operator `:>`.
+    expose the `INTMAP` signature using the constraint operator `:>`. As
+    a quick reminder, ML calls this 'opaque signature ascription' and we
+    use it to get the benefit of hiding our implementation details.
+
+    There is another type of ascription, 'transparent' ascription, which
+    means 'the module exposes _at least_ this signature, but possibly
+    also more'. We get that in Scala by simply leaving out the type
+    annotation from the module declaration and letting Scala infer a
+    subtype of the signature trait for our module.
+
+    TODO: point reader to further reading on this topic.
 
   - The Scala implementation ends up using two traits for two levels of
     abstraction (the module interface and the implementation using a
@@ -232,12 +244,50 @@ Notice how:
 
   - We implement the `IntStrFn` module as actually an anonymous class
     that extends the `IntFn` trait and passes in the concrete type as
-    the parameter. The class has an empty body because it extends a
+    the type parameter. The class has an empty body because it extends a
     trait which defines all its methods and values already.
 
-TODO: mention Prof. Dan Grossman's excellent course using SML and his
-explanations of data type abstraction:
-http://courses.cs.washington.edu/courses/cse341/13sp/unit4notes.pdf
+## A Detour into Module Opaque Types
+
+If you evaluate all the Scala traits and modules shown upto this point
+in the REPL, and then evaluate the following code:
+
+```scala
+import MyCode._
+IntStrFn.empty
+```
+
+You'll get back something like:
+
+    res: MyCode.IntStrFn.T[String] = <function1>
+
+This is one of the elegant things about ML-style modules. Each module
+contains all definitions and _types_ it needs to operate, in a single
+bundle. Traditionally, the module's primary type is just called `T`, so
+`IntStrFn.T` has the sense that it's the `IntStFn` module's primary
+type.
+
+This type alias that you get from the module, known as an opaque type,
+doesn't give you any information or operations on itself. It limits you
+to using values of the type in only _exactly_ the operations that the
+module itself provides. And that's a _great_ thing for modularity and
+information hiding.
+
+You might point out that the REPL actually tells you that the type is
+really a `Function1`, so you immediately know you can call it and do
+certain other operations on it. But that's a detail of how the REPL
+prints out the values of arbitrary objects after evaluating them. It's
+not something you'll have access to when you're actually building
+programs to run standalone.
+
+To see a concrete example of how ML-style opaque types are great at
+helping you make compiler-enforced guarantees in your programs, see
+Prof. Dan Grossman's excellent course using SML and his
+explanations of [data type
+abstraction](http://courses.cs.washington.edu/courses/cse341/13sp/unit4notes.pdf)
+(PDF, pp. 3--6).
+
+## Functors
 
 TODO: mention push-pull of needing to be able to pass in concrete values
 into functions that are typed as taking abstract types; and of needing
