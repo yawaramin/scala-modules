@@ -101,7 +101,7 @@ composition.
 
 With this implementation, we can do things like:
 
-    scala> (IntFn.insert(1, "a") _ andThen IntFn.get(1) _) { IntFn.empty }
+    scala> (IntFn.insert(1, "a") _ andThen IntFn.get(1)) { IntFn.empty }
     res7: String = a
 
 A few points to take away from this:
@@ -232,6 +232,12 @@ Notice how:
 
     TODO: point reader to further reading on this topic.
 
+  - We define the module (`IntStrFn`) inside an object `MyCode` because
+    in Scala, `val`s and `def`s can't be in the toplevel--they need to
+    be contained within some scope. In practice we can easily work
+    around that restriction by defining everything inside some object
+    and then importing all names from that object into the toplevel.
+
   - The Scala implementation ends up using two traits for two levels of
     abstraction (the module interface and the implementation using a
     representation of composed functions), which is somewhat sensible.
@@ -289,8 +295,161 @@ abstraction](http://courses.cs.washington.edu/courses/cse341/13sp/unit4notes.pdf
 
 ## Functors
 
-TODO: mention push-pull of needing to be able to pass in concrete values
-into functions that are typed as taking abstract types; and of needing
-to be able to create abstract type aliases that refer to trait type
-parameters.
+Now that we've set up all the building blocks of modules, we can tackle
+one of ML's most flexible methods for modular code organisation:
+_functors,_ functions which build modules. To illustrate functors, I'll
+re-implement a functorised module from an article I mentioned earlier,
+@dwhjames'
+[adaptation](http://io.pellucid.com/blog/scalas-modular-roots) of a
+functional set data structure. Here I show and explain my version.
+
+```scala
+trait Ordered[A] {
+  type T = A
+
+  def compare(t1: T, t2: T): Int
+}
+```
+
+This is almost exactly the same as @dwhjames' `Ordering` trait; it's
+just that I've tried to stick closer to the SML names wherever possible.
+In essence, it sets up a signature for a module that can define a
+comparator function for any given datatype. To actually define the
+comprator, you just need to create a concrete module, an example of
+which we will see later.
+
+```scala
+trait MySet[A] {
+  type E = A
+  type T
+
+  val empty: T
+  def insert(e: E)(t: T): T
+  def member(e: E)(t: T): Boolean
+}
+```
+
+This is a signature for a module which can implement a set. You'll
+notice that I'm using _both_ type parameters and abstract types in my
+signatures so far. The reason for using a type parameter is as follows.
+The set functions `insert` and `member` declare parameters of type `E`
+(= Element), which is aliased to type parameter `A`. This allows
+concrete modules to pass in values of the concrete type they've been
+instantiated with to the functions, and these are internally 'seen' as
+values of type `E` without any need for type refinemint or other type
+trickery.
+
+The reason for using the type alias `E` when we already have the type
+parameter `A` is as follows. If and when we do implement a concrete
+module with the `MySet` signature, e.g.: `val IntSet: MySet[Int] = new
+MySet[Int] { ... }`, we'll be able to define both `insert` and `member`
+using the _exact_ same types that we have in the trait. We won't have to
+say e.g. `def insert(e: Int)(t: T) = ...`; we'll just say `def insert(e:
+E)(t: T) = ...`. This reduces the possibility for simple copy-paste
+errors and such.
+
+Of course, in this example we're not implementing a concrete module
+directly, so that doesn't matter so much. Back to the example:
+
+```scala
+object Modules {
+  val IntOrdered: Ordered[Int] = new Ordered[Int] {
+    override def compare(t1: T, t2: T) = t1 - t2
+  }
+```
+
+Here we're forced to start putting our concrete modules inside a
+containing scope because as mentioned earlier Scala `val`s can't reside
+in the toplevel.
+
+We could have declared `IntOrdered` in the toplevel using `object
+IntOrdered extends Ordered[Int] { ... }` but that wouldn't have achieved
+opaque signature ascription; the module wouldn't have been as tightly
+controlled as it is with just the type `Ordered[Int]`. So we'll define
+it inside a container module (`Modules`) and import everything from
+`Modules` into the toplevel.
+
+```scala
+  def UnbalancedSet[A](O: Ordered[A]) = // 1
+    new MySet[A] { // 2
+      sealed trait T
+      case object Leaf extends T
+      case class Branch(left: T, e: E, right: T) extends T
+
+      override val empty = Leaf
+
+      override def insert(e: E)(t: T) =
+        t match {
+          case Leaf => Branch(Leaf, e, Leaf)
+          case Branch(l, x, r) =>
+            val comp = O.compare(e, x) // 3
+
+            if (comp < 0) Branch(insert(e)(l), x, r)
+            else if (comp > 0) Branch(l, x, insert(e)(r))
+            else t
+        }
+
+      override def member(e: E)(t: T) =
+        t match {
+          case Leaf => false
+          case Branch(l, x, r) =>
+            val comp = O.compare(e, x) // 4
+
+            if (comp < 0) member(e)(l)
+            else if (comp > 0) member(e)(r)
+            else true
+        }
+    }
+```
+
+The rest of the implementation is almost exactly the same as in
+@dwhjames' article. I'll just point out the interesting bits from our
+perspective, which I've marked above with the numbers:
+
+  1. This is the start of the functor definition. Notice how it's just a
+     normal Scala function which happens to take what we think of as a
+     concrete module as a parameter; and
+
+  2. It happens to return what we think of as a new concrete module. Of
+     course, at the level of the language syntax, they're both just
+     simple objects that implement some interface.
+
+  3. And also 4. Here we actually use the comparator function defined in
+     the `Ordered` signature to figure out if the value we were just
+     given is less than, greater than, or equal to, values we already
+     have in the set. These two usages are exactly why the
+     `UnbalancedSet` functor has a dependency on a module with signature
+     `Ordered`. And the great thing is it can be any module that does
+     anything, as long as it ascribes to the `Ordered` signature.
+
+     For those with a Haskell background, this is basically the ML
+     equivalent of Haskell' typeclasses. Of course, here it's
+     implemented in Scala, which means that Scala has at least two
+     different ways of encoding Haskell's typeclasses (functors and
+     implicits). Of course, functors are (ahem) a lot more explicit than
+     implicits.
+
+```scala
+  // UIS = UnbalancedIntSet
+  val UIS: MySet[Int] = UnbalancedSet(IntOrdered)
+```
+
+This is where we actually define a concrete module which behaves as a
+set of integers implemented as an unbalanced tree. All the expecetd
+operations work:
+
+    scala> (UIS.insert(1) _ andThen UIS.insert(1) _ andThen UIS.insert(2) _ andThen UIS.member(1)) { UIS.empty }
+    res0: Boolean = true
+
+```scala
+  // Slay the compiler:
+  //val UIS = UnbalancedSet(IntOrdered)
+}
+```
+
+This is something that actually kills the compiler. It looks like
+something about returning an object of a new anonymous class from a
+function is too much for Scala's type inference to figure out. Note that
+it's solid as a rock if you annotate the type, which we did in the above
+uncommented code.
 
