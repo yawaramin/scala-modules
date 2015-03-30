@@ -2,24 +2,22 @@
 
 (DRAFT)
 
-I recently watched a [talk by Martin
-Odersky](https://www.youtube.com/watch?v=P8jrvyxHodU) in which he boils
+I recently watched a talk by Martin Odersky (2014) in which he boils
 Scala down to what he considers to be the essential parts of the
 language. In it he remarks that Scala is designed to be a modular
 programming language and its modular abstractions are greatly inspired
-by modular programming in ML (SML). I found this intriguing, because
-I regard SML-style modular programming as a great way to organise
-software when doing programming-in-the-large. If Prof. Odersky's
-assertion about modular progamming in Scala is correct, SML-style
-modules might be a great fit with Scala.
+by modular programming in ML (SML). I found this intriguing, because I
+regard SML-style modular programming as a great way to organise software
+when doing programming-in-the-large. If Prof. Odersky's assertion about
+modular progamming in Scala is correct, SML-style modules might be a
+great fit with Scala.
 
 As is usually the case, I went searching for what others have had to say
-on the matter. I found a great
-[post](http://io.pellucid.com/blog/scalas-modular-roots) by @dwhjames
-showing several attempts and approaches at encoding ML-style modules in
-Scala, and tries out several syntactic 'styles' of Scala to see which
-one might 'feel' better in use. James starts with Odersky's central
-premise, which I interpret as the following key points:
+on the matter. I found a great post (James, 2014) showing several
+attempts and approaches at encoding ML-style modules in Scala, and
+trying out several syntactic 'styles' of Scala to see which one might
+'feel' better in use. James starts with Odersky's central premise, which
+I interpret as the following key points:
 
   - Scala object = ML module
 
@@ -32,11 +30,11 @@ driving example of a `set` data structure from Okasaki's Purely
 Functional Data Structures (appropriate, as Okasaki famously uses SML in
 the code examples for his data structures).
 
-I also found a very thoughtful [answer and
-discussion](http://stackoverflow.com/q/23006951/20371) to the same
-question, posed on Stack Overflow. The answer and discussion here are
-just a gold mine of information about Scala's theoretical issues with
-handling ML-style modules. The key points I took away from them:
+I also found a very thoughtful answer and discussion ('Encoding Standard
+ML modules in OO', 2014) of the same question, posed on Stack Overflow.
+The answer and discussion here are just a gold mine of information about
+Scala's theoretical issues with handling ML-style modules. The key
+points I took away from them:
 
   - ML functor = Scala function. This is slightly more elegant than the
     cumbersome declaration of a new class; but it does require a little
@@ -49,10 +47,10 @@ handling ML-style modules. The key points I took away from them:
     limitation, but perhaps one worth living with given the code
     organisation and maintainability benefits we gain in exchange.
 
-Finally, I found a [fantastic talk](https://youtu.be/oJOYVDwSE3Q) by
-@chrisamaphone on ML modules, their use, and the type theory behind
-them. I'm still mulling all the new ideas over, but so far I've managed
-to take away the following main points:
+Finally, I found a fantastic talk (Martens, 2015) on ML modules, their
+use, and the type theory behind them. I'm still mulling all the new
+ideas over, but so far I've managed to take away the following main
+points:
 
   - SML functors are _generative_ functors, so called because they
     _generate_ new modules as return values for each time they're
@@ -74,14 +72,11 @@ to take away the following main points:
 ## A Basic Module
 
 As a sort of review, let's look at a simple SML module and beside it a
-Scala port. This example is adapted from a fantastic paper on the
-[Essentials of Standard ML
-Modules](http://www.itu.dk/courses/FDP/E2004/Tofte-1996-Essentials_of_SML_Modules.pdf)
-(PDF), which explains SML modules from the ground up. It implements a
-_finite map_ from integers to values of some arbitrary type. In other
-words, a vector. On a side note, the interesting thing about this data
-structure is that it's implemented purely using function
-composition.
+Scala port. This example is adapted from a fantastic ground-up tutorial
+on ML modules (Tofte, n.d.). It implements a _finite map_ from integers
+to values of some arbitrary type. In other words, a vector. On a side
+note, the interesting thing about this data structure is that it's
+implemented purely using function composition.
 
 ```scala
 /* structure IntFn =              */ object IntFn {
@@ -288,20 +283,16 @@ programs to run standalone.
 
 To see a concrete example of how ML-style opaque types are great at
 helping you make compiler-enforced guarantees in your programs, see
-Prof. Dan Grossman's excellent course using SML and his
-explanations of [data type
-abstraction](http://courses.cs.washington.edu/courses/cse341/13sp/unit4notes.pdf)
-(PDF, pp. 3--6).
+Prof. Dan Grossman's excellent course using SML and especially his
+explanations of data type abstraction (Grossman, 2013, pp. 3--6).
 
 ## Functors
 
 Now that we've set up all the building blocks of modules, we can tackle
 one of ML's most flexible methods for modular code organisation:
 _functors,_ functions which build modules. To illustrate functors, I'll
-re-implement a functorised module from an article I mentioned earlier,
-@dwhjames'
-[adaptation](http://io.pellucid.com/blog/scalas-modular-roots) of a
-functional set data structure. Here I show and explain my version.
+re-implement a functorised module from (James, 2014), a functional `set`
+data structure. Here I show and explain my version.
 
 ```scala
 trait Ordered[A] {
@@ -311,7 +302,7 @@ trait Ordered[A] {
 }
 ```
 
-This is almost exactly the same as @dwhjames' `Ordering` trait; it's
+This is almost exactly the same as James' `Ordering` trait; it's
 just that I've tried to stick closer to the SML names wherever possible.
 In essence, it sets up a signature for a module that can define a
 comparator function for any given datatype. To actually define the
@@ -336,7 +327,7 @@ The set functions `insert` and `member` declare parameters of type `E`
 (= Element), which is aliased to type parameter `A`. This allows
 concrete modules to pass in values of the concrete type they've been
 instantiated with to the functions, and these are internally 'seen' as
-values of type `E` without any need for type refinemint or other type
+values of type `E` without any need for type refinement or other type
 trickery.
 
 The reason for using the type alias `E` when we already have the type
@@ -366,8 +357,8 @@ We could have declared `IntOrdered` in the toplevel using `object
 IntOrdered extends Ordered[Int] { ... }` but that wouldn't have achieved
 opaque signature ascription; the module wouldn't have been as tightly
 controlled as it is with just the type `Ordered[Int]`. So we'll define
-it inside a container module (`Modules`) and import everything from
-`Modules` into the toplevel.
+it inside a container module (`Modules`) and later import everything
+from `Modules` into the toplevel.
 
 ```scala
   def UnbalancedSet[A](O: Ordered[A]) = // 1
@@ -402,9 +393,9 @@ it inside a container module (`Modules`) and import everything from
     }
 ```
 
-The rest of the implementation is almost exactly the same as in
-@dwhjames' article. I'll just point out the interesting bits from our
-perspective, which I've marked above with the numbers:
+The rest of the implementation is almost exactly the same as in (James,
+2014). I'll just point out the interesting bits from our perspective,
+which I've marked above with the numbers:
 
   1. This is the start of the functor definition. Notice how it's just a
      normal Scala function which happens to take what we think of as a
@@ -415,19 +406,20 @@ perspective, which I've marked above with the numbers:
      simple objects that implement some interface.
 
   3. And also 4. Here we actually use the comparator function defined in
-     the `Ordered` signature to figure out if the value we were just
-     given is less than, greater than, or equal to, values we already
-     have in the set. These two usages are exactly why the
-     `UnbalancedSet` functor has a dependency on a module with signature
-     `Ordered`. And the great thing is it can be any module that does
-     anything, as long as it ascribes to the `Ordered` signature.
+     the `Ordered` signature to figure out if the value we were given is
+     less than, greater than, or equal to, values we already have in the
+     set. These two usages are exactly why the `UnbalancedSet` functor
+     has a dependency on a module with signature `Ordered`. And the
+     great thing is it can be any module that does any thing, as long as
+     it ascribes to the `Ordered` signature (and, of course, also as
+     long as it typechecks).
 
      For those with a Haskell background, this is basically the ML
-     equivalent of Haskell' typeclasses. Of course, here it's
+     equivalent of Haskell's typeclasses. Of course, here it's
      implemented in Scala, which means that Scala has at least two
      different ways of encoding Haskell's typeclasses (functors and
-     implicits). Of course, functors are (ahem) a lot more explicit than
-     implicits.
+     implicits). In my opinion, functors are (ahem) more explicit than
+     implicits, and thus easier to use.
 
 ```scala
   // UIS = UnbalancedIntSet
@@ -447,9 +439,37 @@ operations work:
 }
 ```
 
-This is something that actually kills the compiler. It looks like
-something about returning an object of a new anonymous class from a
-function is too much for Scala's type inference to figure out. Note that
-it's solid as a rock if you annotate the type, which we did in the above
-uncommented code.
+The commented-out code is something that actually kills the compiler. It
+looks like something about returning an object of a new anonymous class
+from a function is too much for Scala's type inference to figure out.
+Note that it's solid as a rock if you annotate the type, which we did in
+the above uncommented code.
+
+## References
+
+Encoding Standard ML modules in OO. (2014, April 11). Retrieved March
+30, 2015, from http://stackoverflow.com/q/23006951/20371
+
+Grossman, D. (2013). CSE431: Programming Languages Spring 2013 Unit 4
+Summary. University of Washington. Retrieved from
+http://courses.cs.washington.edu/courses/cse341/13sp/unit4notes.pdf
+
+In scala, what's the idiomatic way to apply a series of composed
+functions to a value? (2013, December 13). Retrieved March 30, 2015,
+from http://stackoverflow.com/a/20574722/20371
+
+James, D. (2014, August 14). Scala's Modular Roots. Retrieved from
+http://io.pellucid.com/blog/scalas-modular-roots
+
+Martens, C. (2015, January). Modularity and Abstraction in Functional
+Programming. Presented at the Compose Conference, New York. Retrieved
+from
+https://www.youtube.com/watch?v=oJOYVDwSE3Q&feature=youtube_gdata_player
+
+Odersky, M. (2014, August). Scala: The Simple Parts. Presented at the
+GOTO Conferences. Retrieved from
+https://www.youtube.com/watch?v=P8jrvyxHodU&feature=youtube_gdata_player
+
+Tofte, M. (n.d.). Essentials of Standard ML Modules. Retrieved from
+http://www.itu.dk/courses/FDP/E2004/Tofte-1996-Essentials_of_SML_Modules.pdf
 
