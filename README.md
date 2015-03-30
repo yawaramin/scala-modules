@@ -111,8 +111,10 @@ A few points to take away from this:
 
   - Scala doesn't really optimise for using curried functions, so if we
     want to use that style function composition using `andThen` and
-    partial application is the [most
-    idiomatic](http://stackoverflow.com/a/20574722/20371) way to do it.
+    partial application is the most idiomatic way to do it ('In scala,
+    what's the idiomatic way to apply a series of composed functions to
+    a value?', 2013).
+
     In OCaml or F# we could use the 'forward-pipe' operator (`|>`). We
     can define a forward-pipe operator in Scala (and people have); but
     the implementation isn't something you want running in production.
