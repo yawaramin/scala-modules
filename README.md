@@ -9,7 +9,7 @@ programming language and its modular abstractions are greatly inspired
 by modular programming in ML (SML). I found this intriguing, because I
 regard SML-style modular programming as a great way to organise software
 when doing programming-in-the-large. If Prof. Odersky's assertion about
-modular progamming in Scala is correct, SML-style modules might be a
+modular programming in Scala is correct, SML-style modules might be a
 great fit with Scala.
 
 As is usually the case, I went searching for what others have had to say
@@ -26,9 +26,7 @@ I interpret as the following key points:
   - Scala class = ML functor
 
 He then goes on to explore actually implementing modules using the
-driving example of a `set` data structure from Okasaki's Purely
-Functional Data Structures (appropriate, as Okasaki famously uses SML in
-the code examples for his data structures).
+driving example of a `set` data structure from Okasaki (1996).
 
 I also found a very thoughtful answer and discussion ('Encoding Standard
 ML modules in OO', 2014) of the same question, posed on Stack Overflow.
@@ -215,11 +213,14 @@ object MyCode {
 
 Notice how:
 
-  - We constrain the `IntStrFn` module to only expose the `IntMap`
+  - We upcast the `IntStrFn` module to only expose the `IntMap`
     interface, just as we constrained the SML `IntFn` module to only
     expose the `INTMAP` signature using the constraint operator `:>`. As
     a quick reminder, ML calls this 'opaque signature ascription' and we
     use it to get the benefit of hiding our implementation details.
+
+    In Scala, we implement opaque signature ascription simply with
+    upcasting.
 
     There is another type of ascription, 'transparent' ascription, which
     means 'the module exposes _at least_ this signature, but possibly
@@ -227,7 +228,7 @@ Notice how:
     annotation from the module declaration and letting Scala infer a
     subtype of the signature trait for our module.
 
-    TODO: point reader to further reading on this topic.
+    These types of ascription are described in (Tofte, n.d., p. 4).
 
   - We define the module (`IntStrFn`) inside an object `MyCode` because
     in Scala, `val`s and `def`s can't be in the toplevel--they need to
@@ -308,7 +309,7 @@ This is almost exactly the same as James' `Ordering` trait; it's
 just that I've tried to stick closer to the SML names wherever possible.
 In essence, it sets up a signature for a module that can define a
 comparator function for any given datatype. To actually define the
-comprator, you just need to create a concrete module, an example of
+comparator, you just need to create a concrete module, an example of
 which we will see later.
 
 ```scala
@@ -341,8 +342,7 @@ say e.g. `def insert(e: Int)(t: T) = ...`; we'll just say `def insert(e:
 E)(t: T) = ...`. This reduces the possibility for simple copy-paste
 errors and such.
 
-Of course, in this example we're not implementing a concrete module
-directly, so that doesn't matter so much. Back to the example:
+In fact, you can see this in action in our next module:
 
 ```scala
 object Modules {
@@ -363,7 +363,7 @@ it inside a container module (`Modules`) and later import everything
 from `Modules` into the toplevel.
 
 ```scala
-  def UnbalancedSet[A](O: Ordered[A]) = // 1
+  def UnbalancedSet[A](O: Ordered[A]): MySet[A] = // 1
     new MySet[A] { // 2
       sealed trait T
       case object Leaf extends T
@@ -407,6 +407,13 @@ which I've marked above with the numbers:
      course, at the level of the language syntax, they're both just
      simple objects that implement some interface.
 
+     Notice also that in *1* we constrain the functor's return type to a
+     more general `MySet[A]` instead of letting Scala infer the return
+     type. This is in line with our general philosophy of doing ML-style
+     opaque signature ascription, and also it's a convenience for
+     whoever uses the functor as now they won't need to annotate their
+     concrete module which they get from the functor call.
+
   3. And also 4. Here we actually use the comparator function defined in
      the `Ordered` signature to figure out if the value we were given is
      less than, greater than, or equal to, values we already have in the
@@ -416,36 +423,25 @@ which I've marked above with the numbers:
      it ascribes to the `Ordered` signature (and, of course, also as
      long as it typechecks).
 
-     For those with a Haskell background, this is basically the ML
-     equivalent of Haskell's typeclasses. Of course, here it's
-     implemented in Scala, which means that Scala has at least two
-     different ways of encoding Haskell's typeclasses (functors and
-     implicits). In my opinion, functors are (ahem) more explicit than
-     implicits, and thus easier to use.
-
 ```scala
   // UIS = UnbalancedIntSet
-  val UIS: MySet[Int] = UnbalancedSet(IntOrdered)
+  val UIS = UnbalancedSet(IntOrdered)
 ```
 
 This is where we actually define a concrete module which behaves as a
-set of integers implemented as an unbalanced tree. All the expecetd
+set of integers implemented as an unbalanced tree. All the expected
 operations work:
 
-    scala> (UIS.insert(1) _ andThen UIS.insert(1) _ andThen UIS.insert(2) _ andThen UIS.member(1)) { UIS.empty }
+    scala> import Modules._
+    import Modules._
+
+    scala> (UIS.insert(1) _
+         |   andThen UIS.insert(1) _
+         |   andThen UIS.insert(2) _
+         |   andThen UIS.member(1)) {
+         |   UIS.empty
+         | }
     res0: Boolean = true
-
-```scala
-  // Slay the compiler:
-  //val UIS = UnbalancedSet(IntOrdered)
-}
-```
-
-The commented-out code is something that actually kills the compiler. It
-looks like something about returning an object of a new anonymous class
-from a function is too much for Scala's type inference to figure out.
-Note that it's solid as a rock if you annotate the type, which we did in
-the above uncommented code.
 
 ## References
 
@@ -471,6 +467,10 @@ https://www.youtube.com/watch?v=oJOYVDwSE3Q&feature=youtube_gdata_player
 Odersky, M. (2014, August). Scala: The Simple Parts. Presented at the
 GOTO Conferences. Retrieved from
 https://www.youtube.com/watch?v=P8jrvyxHodU&feature=youtube_gdata_player
+
+Okasaki, C. (1996). Purely functional data structures. Carnegie Mellon
+University, Pittsburgh, PA 15213. Retrieved from
+http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.62.505&rep=rep1&type=pdf
 
 Tofte, M. (n.d.). Essentials of Standard ML Modules. Retrieved from
 http://www.itu.dk/courses/FDP/E2004/Tofte-1996-Essentials_of_SML_Modules.pdf

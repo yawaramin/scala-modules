@@ -103,14 +103,18 @@ object Modules {
   val ISFM: IntMap[String] = new IntFunMap[String] {}
 
   // Group of integers under addition.
-  val Z = new Group[Int] {
+  val Z: Group[Int] = new Group[Int] {
     override val empty = 0
     override def op(t1: T, t2: T) = t1 + t2
     override def inverse(t: T) = -t
   }
 
-  def PairG[A](G: Group[A]) =
-    new Group[Tuple2[A, A]] {
+  /*
+  Functor from input group to a group of pairs of elements of the input
+  group, under element-wise operation on elements of the input group.
+  */
+  def PairG[A](G: Group[A]): Group[(A, A)] =
+    new Group[(A, A)] {
       override val empty = (G.empty, G.empty)
 
       override def op(t1: T, t2: T) =
@@ -125,13 +129,13 @@ object Modules {
 
   IPG = IntPairG
   */
-  val IPG: Group[Tuple2[Int, Int]] = PairG(Z)
+  val IPG = PairG(Z)
 
-  val IntOrdered = new Ordered[Int] {
+  val IntOrdered: Ordered[Int] = new Ordered[Int] {
     override def compare(t1: T, t2: T) = t1 - t2
   }
 
-  def UnbalancedSet[A](O: Ordered[A]) =
+  def UnbalancedSet[A](O: Ordered[A]): MySet[A] =
     new MySet[A] {
       sealed trait T
       case object Leaf extends T
@@ -163,7 +167,7 @@ object Modules {
     }
 
   // UIS = UnbalancedIntSet
-  val UIS: MySet[Int] = UnbalancedSet(IntOrdered)
+  val UIS = UnbalancedSet(IntOrdered)
 
   /* Slay the compiler:
   val UIS = UnbalancedSet(IntOrdered)
