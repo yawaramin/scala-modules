@@ -439,7 +439,7 @@ operations work:
     scala> import Modules._
     import Modules._
 
-    scala> UIS.empty |> UIS.insert(1) |> UIS.insert(1) |> UIS.insert(1) |> UIS.insert(2) |> UIS.member(1)
+    scala> UIS.empty |> UIS.insert(1) |> UIS.insert(1) |> UIS.insert(2) |> UIS.member(1)
     res0: Boolean = true
 
 ## References

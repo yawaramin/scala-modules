@@ -172,9 +172,5 @@ object Modules {
 
   // UIS = UnbalancedIntSet
   val UIS = UnbalancedSet(IntOrdered)
-
-  /* Slay the compiler:
-  val UIS = UnbalancedSet(IntOrdered)
-  */
 }
 
