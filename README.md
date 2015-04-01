@@ -1,7 +1,5 @@
 # Exploring ML-Style Modular Programming in Scala
 
-(DRAFT)
-
 I recently watched a talk by Martin Odersky (2014) in which he boils
 Scala down to what he considers to be the essential parts of the
 language. In it he remarks that Scala is designed to be a modular
@@ -411,8 +409,8 @@ which I've marked above with the numbers:
      course, at the level of the language syntax, they're both just
      simple objects that implement some interface.
 
-     Notice also that in *1* we constrain the functor's return type to a
-     more general `MySet[A]` instead of letting Scala infer the return
+     Notice also that in **1** we constrain the functor's return type to
+     a more general `MySet[A]` instead of letting Scala infer the return
      type. This is in line with our general philosophy of doing ML-style
      opaque signature ascription, and also it's a convenience for
      whoever uses the functor as now they won't need to annotate their
@@ -441,6 +439,42 @@ operations work:
 
     scala> UIS.empty |> UIS.insert(1) |> UIS.insert(1) |> UIS.insert(2) |> UIS.member(1)
     res0: Boolean = true
+
+## Review
+
+Looking back at the various techniques in this article, we take away the
+following main points:
+
+  - Scala object = ML module
+
+  - Scala trait = ML signature
+
+  - Scala upcasting type annotation = ML opaque signature ascription
+
+  - Scala trait type paraneter ~ ML opaque type but with the
+    Scala-specific benefit that we can pass in values of this type to
+    methods in the Scala trait without any special hackery
+
+  - Also Scala abstract type = ML opaque type
+
+  - Alias a trait-internal type name to the trait's type parameter for
+    easy reference in any derived trait or module
+
+  - Scala function = ML functor
+
+  - Annotate all Scala module and functor types to better hide
+    implementation details
+
+  - Need to put Scala `val`s (modules) and `def`s (functors) inside some
+    other scope because we can't declare them in the toplevel. But we
+    can import them into the toplevel once declared
+
+The examples I've shown throughout this article are also all replicated
+in the the accompanying `Modules.scala` file, as are a few more advanced
+examples.
+
+Given the above, it seems very plausible that Scala can reliably encode
+ML-style modular programming--and in fact, probably beyond.
 
 ## References
 
