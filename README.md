@@ -80,8 +80,8 @@ implicit class Piper[A](val x: A) extends AnyVal {
 ```
 
 For an explanation of how this works and why I recommend it for Scala,
-see ('In scala, what's the idiomatic way to apply a series of composed
-functions to a value?', 2013).
+see 'In scala, what's the idiomatic way to apply a series of composed
+functions to a value?' (2013).
 
 ## A Basic Module
 
@@ -232,7 +232,7 @@ Notice how:
     annotation from the module declaration and letting Scala infer a
     subtype of the signature trait for our module.
 
-    These types of ascription are described in (Tofte, n.d., p. 4).
+    These types of ascription are described in Tofte (n.d., p. 4).
 
   - We define the module (`IntStrFn`) inside an object `MyCode` because
     in Scala, `val`s and `def`s can't be in the toplevel--they need to
@@ -298,7 +298,7 @@ explanations of data type abstraction (Grossman, 2013, pp. 3--6).
 Now that we've set up all the building blocks of modules, we can tackle
 one of ML's most flexible methods for modular code organisation:
 _functors,_ functions which build modules. To illustrate functors, I'll
-re-implement a functorised module from (James, 2014), a functional `set`
+re-implement a functorised module from James (2014), a functional `set`
 data structure. Here I show and explain my version.
 
 ```scala
@@ -399,8 +399,8 @@ from `Modules` into the toplevel.
     }
 ```
 
-The rest of the implementation is almost exactly the same as in (James,
-2014). I'll just point out the interesting bits from our perspective,
+The rest of the implementation is almost exactly the same as in James
+(2014). I'll just point out the interesting bits from our perspective,
 which I've marked above with the numbers:
 
   1. This is the start of the functor definition. Notice how it's just a
