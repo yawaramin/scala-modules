@@ -1,5 +1,9 @@
 import scala.language.higherKinds
 
+implicit class Piper[A](val x: A) extends AnyVal {
+  def |>[B](f: A => B) = f(x)
+}
+
 trait Graph[A] {
   type E
   type T

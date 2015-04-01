@@ -67,6 +67,22 @@ points:
     implementations should return the same results (otherwise the
     interface 'breaks its promise').
 
+## A Functional Convenience
+
+Before we start creating modules, let's define a helper
+function to make it easy to apply functions in a reverse application
+order, like F# or OCaml, e.g.: `x |> f |> g |> h` (= `h(g(f(x)))`).
+
+```scala
+implicit class Piper[A](val x: A) extends AnyVal {
+  def |>[B](f: A => B) = f(x)
+}
+```
+
+For an explanation of how this works and why I recommend it for Scala,
+see ('In scala, what's the idiomatic way to apply a series of composed
+functions to a value?', 2013).
+
 ## A Basic Module
 
 As a sort of review, let's look at a simple SML module and beside it a
@@ -94,7 +110,7 @@ implemented purely using function composition.
 
 With this implementation, we can do things like:
 
-    scala> (IntFn.insert(1, "a") _ andThen IntFn.get(1)) { IntFn.empty }
+    scala> IntFn.empty |> IntFn.insert(1, "a") |> IntFn.get(1)
     res7: String = a
 
 A few points to take away from this:
@@ -106,16 +122,6 @@ A few points to take away from this:
   - Scala is somewhat denser than SML for the equivalent functionality.
     To me, this is mostly a result of Scala's weaker type inference that
     forces us to specify a lot more.
-
-  - Scala doesn't really optimise for using curried functions, so if we
-    want to use that style function composition using `andThen` and
-    partial application is the most idiomatic way to do it ('In scala,
-    what's the idiomatic way to apply a series of composed functions to
-    a value?', 2013).
-
-    In OCaml or F# we could use the 'forward-pipe' operator (`|>`). We
-    can define a forward-pipe operator in Scala (and people have); but
-    the implementation isn't something you want running in production.
 
 ## The Module Signature
 
@@ -205,9 +211,7 @@ parameter of our choosing, and within some scope (not at the toplevel):
 object MyCode {
   val IntStrFn: IntMap[String] = new IntFn[String] {}
 
-  (IntStrFn.insert(1, "a") _ andThen IntStrFn.get(1) _ andThen print) {
-    IntStrFn.empty
-  }
+  IntStrFn.empty |> IntStrFn.insert(1, "a") |> IntStrFn.get(1) |> print
 }
 ```
 
@@ -435,12 +439,7 @@ operations work:
     scala> import Modules._
     import Modules._
 
-    scala> (UIS.insert(1) _
-         |   andThen UIS.insert(1) _
-         |   andThen UIS.insert(2) _
-         |   andThen UIS.member(1)) {
-         |   UIS.empty
-         | }
+    scala> UIS.empty |> UIS.insert(1) |> UIS.insert(1) |> UIS.insert(1) |> UIS.insert(2) |> UIS.member(1)
     res0: Boolean = true
 
 ## References
@@ -454,7 +453,7 @@ http://courses.cs.washington.edu/courses/cse341/13sp/unit4notes.pdf
 
 In scala, what's the idiomatic way to apply a series of composed
 functions to a value? (2013, December 13). Retrieved March 30, 2015,
-from http://stackoverflow.com/a/20574722/20371
+from http://stackoverflow.com/a/29380677/20371
 
 James, D. (2014, August 14). Scala's Modular Roots. Retrieved from
 http://io.pellucid.com/blog/scalas-modular-roots
