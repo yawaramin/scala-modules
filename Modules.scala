@@ -114,18 +114,17 @@ object Modules {
   }
 
   /*
-  Functor from input group to a group of pairs of elements of the input
-  group, under element-wise operation on elements of the input group.
+  Functor from input groups to a group of pairs of elements of the input
+  groups, under element-wise operation on elements of the input groups.
   */
-  def PairG[A](G: Group[A]): Group[(A, A)] =
-    new Group[(A, A)] {
-      override val empty = (G.empty, G.empty)
+  def PairG[A1, A2](G1: Group[A1], G2: Group[A2]): Group[(A1, A2)] =
+    new Group[(A1, A2)] {
+      override val empty = (G1.empty, G2.empty)
 
       override def op(t1: T, t2: T) =
-        (G.op(t1._1, t2._1), G.op(t1._2, t2._2))
+        (G1.op(t1._1, t2._1), G2.op(t1._2, t2._2))
 
-      override def inverse(t: T) =
-        (G.inverse(t._1), G.inverse(t._2))
+      override def inverse(t: T) = (G1.inverse(t._1), G2.inverse(t._2))
     }
 
   /*
@@ -133,7 +132,7 @@ object Modules {
 
   IPG = IntPairG
   */
-  val IPG = PairG(Z)
+  val IPG = PairG(Z, Z)
 
   val IntOrdered: Ordered[Int] = new Ordered[Int] {
     override def compare(t1: T, t2: T) = t1 - t2
