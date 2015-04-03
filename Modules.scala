@@ -91,6 +91,14 @@ object Modules {
     def inverse(t: T): T
   }
 
+  trait Summary[A] {
+    type T = A
+
+    def sum(xs: Seq[T]): T
+    def sumNonEmpty(xs: Seq[T]): Option[T]
+    def sumDifference(xs: Seq[T], ys: Seq[T]): T
+  }
+
   // Group of integers under addition.
   val Z: Group[Int] = new Group[Int] {
     override val empty = 0
@@ -125,6 +133,31 @@ object Modules {
   IPG = IntPairG
   */
   val IPG = PairG(Z, Z)
+
+  /*
+  Functor from input group to some summary functions for the same type
+  as the group's type.
+
+  Exercise in translating typeclass style Scala into ML-style modular
+  Scala. Example functions originally from
+  http://aakashns.github.io/better-type-class.html.
+  */
+  def GroupSummary[A](G: Group[A]): Summary[A] =
+    new Summary[A] {
+      override def sum(xs: Seq[T]) = xs.foldLeft(G.empty)(G.op)
+
+      override def sumNonEmpty(xs: Seq[T]) =
+        if (xs.isEmpty) None else Some(xs |> sum)
+
+      override def sumDifference(xs: Seq[T], ys: Seq[T]) =
+        G.op(xs |> sum, ys |> sum |> G.inverse)
+    }
+
+  // Summary functions for group of integers.
+  val ZGS = GroupSummary(Z)
+
+  // Summary functions for group of reals.
+  val RGS = GroupSummary(R)
 
   trait Ordered[A] {
     type T = A
