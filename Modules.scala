@@ -1,100 +1,77 @@
 import scala.language.higherKinds
 
-implicit class Piper[A](val x: A) extends AnyVal {
-  def |>[B](f: A => B) = f(x)
-}
-
-trait Graph[A] {
-  type E
-  type T
-
-  val empty: T
-  def nodes(t: T): Set[A]
-  def edges(t: T): Set[E]
-  def create(vs: Set[A], es: Set[E]): T
-  def insert(v1: A, v2: A)(t: T): T
-}
-
-trait MapGraph[A] extends Graph[A] {
-  type E = (A, A)
-  type T = Map[A, Set[A]]
-
-  override val empty: T = Map.empty
-
-  override def nodes(t: T) = t.keySet
-
-  override def edges(t: T) = {
-    val pairs = for (v1 <- t.keys; v2 <- t(v1)) yield (v1, v2)
-    pairs.toSet
+object Modules {
+  implicit class Piper[A](val x: A) extends AnyVal {
+    def |>[B](f: A => B) = f(x)
   }
 
-  override def create(vs: Set[A], es: Set[E]) = {
-    val vertexesEdges =
-      for (v <- vs; (v1, v2) <- es if v == v1) yield (v1, v2)
-    vertexesEdges.groupBy(_._1).mapValues(_.map(_._2).toSet)
+  trait Graph[A] {
+    type E
+    type T
+
+    val empty: T
+    def nodes(t: T): Set[A]
+    def edges(t: T): Set[E]
+    def create(vs: Set[A], es: Set[E]): T
+    def insert(v1: A, v2: A)(t: T): T
   }
 
-  override def insert(v1: A, v2: A)(t: T) = {
-    val otherVertexes = t.get(v1)
+  trait MapGraph[A] extends Graph[A] {
+    type E = (A, A)
+    type T = Map[A, Set[A]]
 
-    otherVertexes match {
-      case Some(vs) => t.updated(v1, vs + v2)
-      case None => t + Tuple2(v1, Set(v2))
+    override val empty: T = Map.empty
+
+    override def nodes(t: T) = t.keySet
+
+    override def edges(t: T) = {
+      val pairs = for (v1 <- t.keys; v2 <- t(v1)) yield (v1, v2)
+      pairs.toSet
+    }
+
+    override def create(vs: Set[A], es: Set[E]) = {
+      val vertexesEdges =
+        for (v <- vs; (v1, v2) <- es if v == v1) yield (v1, v2)
+      vertexesEdges.groupBy(_._1).mapValues(_.map(_._2).toSet)
+    }
+
+    override def insert(v1: A, v2: A)(t: T) = {
+      val otherVertexes = t.get(v1)
+
+      otherVertexes match {
+        case Some(vs) => t.updated(v1, vs + v2)
+        case None => t + Tuple2(v1, Set(v2))
+      }
     }
   }
-}
 
-trait IntMap[A] {
-  type NotFound
-  type T[_]
-
-  val empty: T[A]
-  def get(i: Int)(x: T[A]): A
-  def insert(k: Int, v: A)(x: T[A]): T[A]
-  def remove(k: Int)(x: T[A]): T[A]
-}
-
-trait IntFunMap[A] extends IntMap[A] {
-  case class NotFound() extends Exception()
-  type T[A] = Int => A
-
-  override val empty = (i: Int) => throw NotFound()
-
-  override def get(i: Int)(x: T[A]) = x(i)
-
-  override def insert(k: Int, v: A)(x: T[A]) =
-    (i: Int) => if (i == k) v else get(i)(x)
-
-  override def remove(k: Int)(x: T[A]) =
-    (i: Int) => if (i == k) empty(i) else get(i)(x)
-}
-
-trait Group[A] {
-  type T = A
-
-  val empty: T
-  def op(t1: T, t2: T): T
-  def inverse(t: T): T
-}
-
-trait Ordered[A] {
-  type T = A
-
-  def compare(t1: T, t2: T): Int
-}
-
-trait MySet[A] {
-  type E = A
-  type T
-
-  val empty: T
-  def insert(e: E)(t: T): T
-  def member(e: E)(t: T): Boolean
-}
-
-object Modules {
   // IMG = IntMapGraph
   val IMG: Graph[Int] = new MapGraph[Int] {}
+
+  trait IntMap[A] {
+    type NotFound
+    type T[_]
+
+    val empty: T[A]
+    def get(i: Int)(x: T[A]): A
+    def insert(k: Int, v: A)(x: T[A]): T[A]
+    def remove(k: Int)(x: T[A]): T[A]
+  }
+
+  trait IntFunMap[A] extends IntMap[A] {
+    case class NotFound() extends Exception()
+    type T[A] = Int => A
+
+    override val empty = (i: Int) => throw NotFound()
+
+    override def get(i: Int)(x: T[A]) = x(i)
+
+    override def insert(k: Int, v: A)(x: T[A]) =
+      (i: Int) => if (i == k) v else get(i)(x)
+
+    override def remove(k: Int)(x: T[A]) =
+      (i: Int) => if (i == k) empty(i) else get(i)(x)
+  }
 
   /*
   Can't create instance of IntFunMap because it's abstract--unless we
@@ -106,9 +83,24 @@ object Modules {
   */
   val ISFM: IntMap[String] = new IntFunMap[String] {}
 
+  trait Group[A] {
+    type T = A
+
+    val empty: T
+    def op(t1: T, t2: T): T
+    def inverse(t: T): T
+  }
+
   // Group of integers under addition.
   val Z: Group[Int] = new Group[Int] {
     override val empty = 0
+    override def op(t1: T, t2: T) = t1 + t2
+    override def inverse(t: T) = -t
+  }
+
+  // Group of reals under addition.
+  val R: Group[Double] = new Group[Double] {
+    override val empty = 0.0
     override def op(t1: T, t2: T) = t1 + t2
     override def inverse(t: T) = -t
   }
@@ -134,8 +126,23 @@ object Modules {
   */
   val IPG = PairG(Z, Z)
 
+  trait Ordered[A] {
+    type T = A
+
+    def compare(t1: T, t2: T): Int
+  }
+
   val IntOrdered: Ordered[Int] = new Ordered[Int] {
     override def compare(t1: T, t2: T) = t1 - t2
+  }
+
+  trait MySet[A] {
+    type E = A
+    type T
+
+    val empty: T
+    def insert(e: E)(t: T): T
+    def member(e: E)(t: T): Boolean
   }
 
   def UnbalancedSet[A](O: Ordered[A]): MySet[A] =
