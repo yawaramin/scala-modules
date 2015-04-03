@@ -134,6 +134,36 @@ object Modules {
   */
   val IPG = PairG(Z, Z)
 
+  val Rational: Group[(Int, Int)] =
+    new Group[(Int, Int)] {
+      /*
+      gcd and reduce will never be seen by users of this module because
+      it's been upcast immediately on declaration (to Group) and its
+      real type is never captured.
+      */
+      def gcd(x: Int, y: Int): Int =
+        if (x == y) x
+        else if (x < y) gcd(x, y - x)
+        else gcd(y, x)
+
+      def reduce(t: T) = {
+        val u = if (t._2 < 0) (t._1 * -1, t._2 * -1) else t
+
+        if (u._1 == 0) t
+        else {
+          val d = gcd(u._1 |> Math.abs, u._2 |> Math.abs)
+          if (d == u._2) (u._1 / d, 1) else (u._1 / d, u._2 / d)
+        }
+      }
+
+      override val empty = (0, 1)
+
+      override def op(t1: T, t2: T) =
+        (t1._1 * t2._2 + t2._1 * t1._2, t1._2 * t2._2) |> reduce
+
+      override def inverse(t: T) = (-t._1, t._2) |> reduce
+    }
+
   /*
   Functor from input group to some summary functions for the same type
   as the group's type.
@@ -158,6 +188,12 @@ object Modules {
 
   // Summary functions for group of reals.
   val RGS = GroupSummary(R)
+
+  // Summary functions for pair of ints under element-wise addition.
+  val IPGS = GroupSummary(IPG)
+
+  // Summary functions for rationals under addition.
+  val RaGS = GroupSummary(Rational)
 
   trait Ordered[A] {
     type T = A
