@@ -1,8 +1,8 @@
 # Exploring ML-Style Modular Programming in Scala
 
-I recently watched a talk by Martin Odersky (2014) in which he boils
-Scala down to what he considers to be the essential parts of the
-language. In it he remarks that Scala is designed to be a modular
+I recently watched a talk by Martin Odersky [(2014)](#ode2014) in which
+he boils Scala down to what he considers to be the essential parts of
+the language. In it he remarks that Scala is designed to be a modular
 programming language and its modular abstractions are greatly inspired
 by modular programming in ML (SML). I found this intriguing, because I
 regard SML-style modular programming as a great way to organise software
@@ -11,11 +11,11 @@ modular programming in Scala is correct, SML-style modules might be a
 great fit with Scala.
 
 As is usually the case, I went searching for what others have had to say
-on the matter. I found a great post (James, 2014) showing several
-attempts and approaches at encoding ML-style modules in Scala, and
-trying out several syntactic 'styles' of Scala to see which one might
-'feel' better in use. James starts with Odersky's central premise, which
-I interpret as the following key points:
+on the matter. I found a great post [(James, 2014)](#jam2014) showing
+several attempts and approaches at encoding ML-style modules in Scala,
+and trying out several syntactic 'styles' of Scala to see which one
+might 'feel' better in use. James starts with Odersky's central premise,
+which I interpret as the following key points:
 
   - Scala object = ML module
 
@@ -24,13 +24,14 @@ I interpret as the following key points:
   - Scala class = ML functor
 
 He then goes on to explore actually implementing modules using the
-driving example of a `set` data structure from Okasaki (1996).
+driving example of a `set` data structure from Okasaki
+[(1996)](#oka1996).
 
-I also found a very thoughtful answer and discussion ('Encoding Standard
-ML modules in OO', 2014) of the same question, posed on Stack Overflow.
-The answer and discussion here are just a gold mine of information about
-Scala's theoretical issues with handling ML-style modules. The key
-points I took away from them:
+I also found a very thoughtful answer and discussion [('Encoding
+Standard ML modules in OO', 2014)](#enc2014) of the same question, posed
+on Stack Overflow. The answer and discussion here are just a gold mine
+of information about Scala's theoretical issues with handling ML-style
+modules. The key points I took away from them:
 
   - ML functor = Scala function. This is slightly more elegant than the
     cumbersome declaration of a new class; but it does require a little
@@ -43,10 +44,10 @@ points I took away from them:
     limitation, but perhaps one worth living with given the code
     organisation and maintainability benefits we gain in exchange.
 
-Finally, I found a fantastic talk (Martens, 2015) on ML modules, their
-use, and the type theory behind them. I'm still mulling all the new
-ideas over, but so far I've managed to take away the following main
-points:
+Finally, I found a fantastic talk [(Martens, 2015)](#mar2015) on ML
+modules, their use, and the type theory behind them. I'm still mulling
+all the new ideas over, but so far I've managed to take away the
+following main points:
 
   - SML functors are _generative_ functors, so called because they
     _generate_ new modules as return values for each time they're
@@ -79,16 +80,16 @@ implicit class Piper[A](val x: A) extends AnyVal {
 
 For an explanation of how this works and why I recommend it for Scala,
 see 'In scala, what's the idiomatic way to apply a series of composed
-functions to a value?' (2013).
+functions to a value?' [(2013)](#ins2013).
 
 ## A Basic Module
 
 As a sort of review, let's look at a simple SML module and beside it a
 Scala port. This example is adapted from a fantastic ground-up tutorial
-on ML modules (Tofte, 1996). It implements a _finite map_ from integers
-to values of some arbitrary type. In other words, a vector. On a side
-note, the interesting thing about this data structure is that it's
-implemented purely using function composition.
+on ML modules [(Tofte, 1996)](#tof1996). It implements a _finite map_
+from integers to values of some arbitrary type. In other words, a
+vector. On a side note, the interesting thing about this data structure
+is that it's implemented purely using function composition.
 
 ```scala
 /* structure IntFn =              */ object IntFn {
@@ -230,7 +231,8 @@ Notice how:
     annotation from the module declaration and letting Scala infer a
     subtype of the signature trait for our module.
 
-    These types of ascription are described in Tofte (1996, p. 4).
+    These types of ascription are described in Tofte [(1996, p.
+    4)](#tof1996).
 
   - We define the module (`IntStrFn`) inside an object `MyCode` because
     in Scala, `val`s and `def`s can't be in the toplevel--they need to
@@ -289,15 +291,16 @@ programs to run standalone.
 To see a concrete example of how ML-style opaque types are great at
 helping you make compiler-enforced guarantees in your programs, see
 Prof. Dan Grossman's excellent course using SML and especially his
-explanations of data type abstraction (Grossman, 2013, pp. 3--6).
+explanations of data type abstraction [(Grossman, 2013, pp.
+3--6)](#gros2013).
 
 ## Functors
 
 Now that we've set up all the building blocks of modules, we can tackle
 one of ML's most flexible methods for modular code organisation:
 _functors,_ functions which build modules. To illustrate functors, I'll
-re-implement a functorised module from James (2014), a functional `set`
-data structure. Here I show and explain my version.
+re-implement a functorised module from James [(2014)](#jam2014), a
+functional `set` data structure. Here I show and explain my version.
 
 ```scala
 trait Ordered[A] {
@@ -398,8 +401,8 @@ from `Modules` into the toplevel.
 ```
 
 The rest of the implementation is almost exactly the same as in James
-(2014). I'll just point out the interesting bits from our perspective,
-which I've marked above with the numbers:
+[(2014)](#jam2014). I'll just point out the interesting bits from our
+perspective, which I've marked above with the numbers:
 
   1. This is the start of the functor definition. Notice how it's just a
      normal Scala function which happens to take what we think of as a
@@ -478,35 +481,36 @@ ML-style modular programming--and in fact, probably beyond.
 
 ## References
 
-Encoding Standard ML modules in OO. (2014, April 11). Retrieved March
-30, 2015, from http://stackoverflow.com/q/23006951/20371
+<a name="enc2014"/>Encoding Standard ML modules in OO. (2014, April 11).
+Retrieved March 30, 2015, from http://stackoverflow.com/q/23006951/20371
 
-Grossman, D. (2013). CSE431: Programming Languages Spring 2013 Unit 4
-Summary. University of Washington. Retrieved from
+<a name="gros2013"/>Grossman, D. (2013). CSE431: Programming Languages
+Spring 2013 Unit 4 Summary. University of Washington. Retrieved from
 http://courses.cs.washington.edu/courses/cse341/13sp/unit4notes.pdf
 
-In scala, what's the idiomatic way to apply a series of composed
-functions to a value? (2013, December 13). Retrieved March 30, 2015,
-from http://stackoverflow.com/a/29380677/20371
+<a name="ins2013"/>In scala, what's the idiomatic way to apply a series
+of composed functions to a value? (2013, December 13). Retrieved March
+30, 2015, from http://stackoverflow.com/a/29380677/20371
 
-James, D. (2014, August 14). Scala's Modular Roots. Retrieved from
-http://io.pellucid.com/blog/scalas-modular-roots
+<a name="jam2014"/>James, D. (2014, August 14). Scala's Modular Roots.
+Retrieved from http://io.pellucid.com/blog/scalas-modular-roots
 
-Martens, C. (2015, January). Modularity and Abstraction in Functional
-Programming. Presented at the Compose Conference, New York. Retrieved
-from
+<a name="mar2015"/>Martens, C. (2015, January). Modularity and
+Abstraction in Functional Programming. Presented at the Compose
+Conference, New York. Retrieved from
 https://www.youtube.com/watch?v=oJOYVDwSE3Q&feature=youtube_gdata_player
 
-Odersky, M. (2014, August). Scala: The Simple Parts. Presented at the
-GOTO Conferences. Retrieved from
+<a name="ode2014"/>Odersky, M. (2014, August). Scala: The Simple Parts.
+Presented at the GOTO Conferences. Retrieved from
 https://www.youtube.com/watch?v=P8jrvyxHodU&feature=youtube_gdata_player
 
-Okasaki, C. (1996). Purely functional data structures. Carnegie Mellon
-University, Pittsburgh, PA 15213. Retrieved from
+<a name="oka1996"/>Okasaki, C. (1996). Purely functional data
+structures. Carnegie Mellon University, Pittsburgh, PA 15213. Retrieved
+from
 http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.62.505&rep=rep1&type=pdf
 
-Tofte, M. (1996). Essentials of Standard ML Modules. In J. Launchbury,
-E. Meijer, & T. Sheard (Eds.), Advanced Functional Programming (pp.
-208--229). Springer Berlin Heidelberg. Retrieved from
+<a name="tof1996"/>Tofte, M. (1996). Essentials of Standard ML Modules.
+In J. Launchbury, E. Meijer, & T. Sheard (Eds.), Advanced Functional
+Programming (pp. 208--229). Springer Berlin Heidelberg. Retrieved from
 http://www.itu.dk/courses/FDP/E2004/Tofte-1996-Essentials_of_SML_Modules.pdf
 
