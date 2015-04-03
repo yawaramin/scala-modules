@@ -85,7 +85,7 @@ functions to a value?' (2013).
 
 As a sort of review, let's look at a simple SML module and beside it a
 Scala port. This example is adapted from a fantastic ground-up tutorial
-on ML modules (Tofte, n.d.). It implements a _finite map_ from integers
+on ML modules (Tofte, 1996). It implements a _finite map_ from integers
 to values of some arbitrary type. In other words, a vector. On a side
 note, the interesting thing about this data structure is that it's
 implemented purely using function composition.
@@ -230,7 +230,7 @@ Notice how:
     annotation from the module declaration and letting Scala infer a
     subtype of the signature trait for our module.
 
-    These types of ascription are described in Tofte (n.d., p. 4).
+    These types of ascription are described in Tofte (1996, p. 4).
 
   - We define the module (`IntStrFn`) inside an object `MyCode` because
     in Scala, `val`s and `def`s can't be in the toplevel--they need to
@@ -505,6 +505,8 @@ Okasaki, C. (1996). Purely functional data structures. Carnegie Mellon
 University, Pittsburgh, PA 15213. Retrieved from
 http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.62.505&rep=rep1&type=pdf
 
-Tofte, M. (n.d.). Essentials of Standard ML Modules. Retrieved from
+Tofte, M. (1996). Essentials of Standard ML Modules. In J. Launchbury,
+E. Meijer, & T. Sheard (Eds.), Advanced Functional Programming (pp.
+208--229). Springer Berlin Heidelberg. Retrieved from
 http://www.itu.dk/courses/FDP/E2004/Tofte-1996-Essentials_of_SML_Modules.pdf
 

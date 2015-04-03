@@ -147,7 +147,7 @@ object Modules {
       override def sum(xs: Seq[T]) = xs.foldLeft(G.empty)(G.op)
 
       override def sumNonEmpty(xs: Seq[T]) =
-        if (xs.isEmpty) None else Some(xs |> sum)
+        if (xs.isEmpty) None else xs |> sum |> Some.apply
 
       override def sumDifference(xs: Seq[T], ys: Seq[T]) =
         G.op(xs |> sum, ys |> sum |> G.inverse)
