@@ -260,7 +260,7 @@ IntStrFn.empty
 
 You'll get back something like:
 
-    res: MyCode.IntStrFn.T[String] = <function1>
+    res: MyCode.IntStrFn.T = <function1>
 
 This is one of the elegant things about ML-style modules. Each module
 contains all definitions and _types_ it needs to operate, in a single
@@ -361,36 +361,36 @@ it inside a container module (`Modules`) and later import everything
 from `Modules` into the toplevel.
 
 ```scala
-  def UnbalancedSet[A](O: Ordered[A]): MySet[A] = // 1
-    new MySet[A] { // 2
-      sealed trait T
-      case object Leaf extends T
-      case class Branch(left: T, e: E, right: T) extends T
+def UnbalancedSet[A](O: Ordered[A]): MySet[A] = // 1
+  new MySet[A] { // 2
+    sealed trait T
+    case object Leaf extends T
+    case class Branch(left: T, e: E, right: T) extends T
 
-      override val empty = Leaf
+    override val empty = Leaf
 
-      override def insert(e: E)(t: T) =
-        t match {
-          case Leaf => Branch(Leaf, e, Leaf)
-          case Branch(l, x, r) =>
-            val comp = O.compare(e, x) // 3
+    override def insert(e: E)(t: T) =
+      t match {
+        case Leaf => Branch(Leaf, e, Leaf)
+        case Branch(l, x, r) =>
+          val comp = O.compare(e, x) // 3
 
-            if (comp < 0) Branch(insert(e)(l), x, r)
-            else if (comp > 0) Branch(l, x, insert(e)(r))
-            else t
-        }
+          if (comp < 0) Branch(insert(e)(l), x, r)
+          else if (comp > 0) Branch(l, x, insert(e)(r))
+          else t
+      }
 
-      override def member(e: E)(t: T) =
-        t match {
-          case Leaf => false
-          case Branch(l, x, r) =>
-            val comp = O.compare(e, x) // 4
+    override def member(e: E)(t: T) =
+      t match {
+        case Leaf => false
+        case Branch(l, x, r) =>
+          val comp = O.compare(e, x) // 4
 
-            if (comp < 0) member(e)(l)
-            else if (comp > 0) member(e)(r)
-            else true
-        }
-    }
+          if (comp < 0) member(e)(l)
+          else if (comp > 0) member(e)(r)
+          else true
+      }
+  }
 ```
 
 The rest of the implementation is almost exactly the same as in James
@@ -422,8 +422,8 @@ perspective, which I've marked above with the numbers:
      of course, also as long as it typechecks).
 
 ```scala
-  // UIS = UnbalancedIntSet
-  val UIS = UnbalancedSet(IntOrdered)
+// UIS = UnbalancedIntSet
+val UIS = UnbalancedSet(IntOrdered)
 ```
 
 This is where we actually define a concrete module which behaves as a
