@@ -128,34 +128,33 @@ The next step in the evolution of a module is usually to extract its
 signature:
 
 ```scala
-/* signature INTMAP =                       */ import scala.language.higherKinds
-/*   sig                                    */
-/*     exception NotFound                   */ trait IntMap[A] {
-/*     type 'a t                            */   type NotFound
-/*                                          */   type T[_]
-/*     val empty: 'a t                      */
-/*     val get: int -> 'a t -> 'a           */   val empty: T[A]
-/*     val insert: int * 'a -> 'a t -> 'a t */   def get(i: Int)(x: T[A]): A
-/*   end;                                   */   def insert(k: Int, v: A)(x: T[A]): T[A]
-/*                                          */ }
+/* signature INTMAP =                       */ trait IntMap[A] {
+/*   sig                                    */   type NotFound
+/*     exception NotFound                   */   type T
+/*     type 'a t                            */
+/*                                          */   val empty: T
+/*     val empty: 'a t                      */   def get(i: Int)(x: T): A
+/*     val get: int -> 'a t -> 'a           */   def insert(k: Int, v: A)(x: T): T
+/*     val insert: int * 'a -> 'a t -> 'a t */ }
+/*   end;                                   */
 ```
 
 Now we start making some trade-offs in Scala. Some points to take away:
 
   - We're able to clean out the type parameters from all the methods,
-    but we're now passing in the type parameter into the trait. And,
-    because the type `T` is abstract (we don't know in the trait how
-    implementors will define it), we have to say that it accepts any
-    unknown type as a parameter, and so we have to now enable
-    higher-kinded types.
+    but we're now passing in the type parameter into the trait. This has
+    upsides and downsides: it makes the signature's declared types
+    simpler (we don't have to parameterise any of the inner types or
+    methods), but it also means we can't instantiate a single module in
+    Scala to handle any input type, as we'll see later.
 
   - We express `empty` as a `val` instead of as a `def` because we want
     it to return the exact same thing each time; so no need for a
     function call to do that. We couldn't do this with the object
-    version before because `val`s can't accept type parameters
-    (this is a hard fact of Scala syntax). This also forces us to move
-    out the type parameter to the trait, so that it's in scope by the
-    time we start declaring `empty`.
+    version before because `val`s can't accept type parameters (this is
+    a hard fact of Scala syntax). This is another reason to move out the
+    type parameter to the trait, so that it's in scope by the time we
+    start declaring `empty`.
 
 After that, the next step is to express the module's implementation in
 terms of the signature:
@@ -163,14 +162,14 @@ terms of the signature:
 ```scala
 /* structure IntFn :> INTMAP =    */ trait IntFn[A] extends IntMap[A] {
 /*   struct                       */   case class NotFound() extends Exception()
-/*     exception NotFound         */   type T[A] = Int => A
+/*     exception NotFound         */   type T = Int => A
 /*     type 'a t = int -> 'a      */
 /*                                */   override val empty =
 /*     fun empty i =              */     (i: Int) => throw NotFound()
 /*       raise NotFound           */
-/*                                */   override def get(i: Int)(x: T[A]) = x(i)
+/*                                */   override def get(i: Int)(x: T) = x(i)
 /*     fun get i x = x i          */
-/*                                */   override def insert(k: Int, v: A)(x: T[A]) =
+/*                                */   override def insert(k: Int, v: A)(x: T) =
 /*     fun insert (k, v) x i =    */     (i: Int) =>
 /*       if i = k                 */       if (i == k) v else get(i)(x)
 /*         then v                 */ }
@@ -178,18 +177,10 @@ terms of the signature:
 /*   end;                         */
 ```
 
-Can you tell the crucial difference between the original SML and the
-Scala translation? Hint: it's right at the first word of the first line
-of each definition.
-
-We express the SML module directly as a concrete structure, while we
-express the Scala module as an abstract trait that takes a type
-parameter. Remember how we mentioned earlier that in the Scala version
-we needed to pass in a type parameter? I mentioned some basic reasons
-earlier, but there are better reasons that that we'll explore later. For
-now, I'll mention that we want Scala modules to be as flexible as
-possible, and that leads to design decisions that inevitably lead us to
-passing in type parameters.
+As I mentioned, we express the SML module directly as a concrete
+structure, while we express the Scala module as an abstract trait that
+takes a type parameter. We decided in the signature to pass in a type
+parameter for a few different reasons, which we'll elaborate on later.
 
 Well, as a consequence of these decisions, we also aren't able to
 directly create a module (i.e., a Scala object) that can work on any
@@ -244,11 +235,13 @@ Notice how:
     abstraction (the module interface and the implementation using a
     representation of composed functions), which is somewhat sensible.
 
-  - We use `override` extensively in the `IntFn` trait to enable
-    C++-style virtual method dispatch for when we're holding several
-    different `IntMap` instances with different concrete implementations
-    and we want to operate on all of them uniformly and have them just
-    do the right thing automatically.
+  - We use `override` extensively in the `IntFn` trait to explicitly
+    show which methods and values are from the signature. Of course, we
+    can have more methods and values in the `IntFn` trait and object
+    instances (e.g. `IntStrFn`) and these will automatically be
+    private--they'll never be seen outside the module because the module
+    will be upcast immediately on creation to its signature's type, and
+    its runtime type will never be known by any user.
 
   - We implement the `IntStrFn` module as actually an anonymous class
     that extends the `IntFn` trait and passes in the concrete type as
@@ -419,14 +412,14 @@ perspective, which I've marked above with the numbers:
      whoever uses the functor as now they won't need to annotate their
      concrete module which they get from the functor call.
 
-  3. And also 4. Here we actually use the comparator function defined in
-     the `Ordered` signature to figure out if the value we were given is
-     less than, greater than, or equal to, values we already have in the
-     set. These two usages are exactly why the `UnbalancedSet` functor
-     has a dependency on a module with signature `Ordered`. And the
-     great thing is it can be any module that does any thing, as long as
-     it ascribes to the `Ordered` signature (and, of course, also as
-     long as it typechecks).
+  3. And also **4.** Here we actually use the comparator function
+     defined in the `Ordered` signature to figure out if the value we
+     were given is less than, greater than, or equal to, values we
+     already have in the set. These two usages are exactly why the
+     `UnbalancedSet` functor has a dependency on a module with signature
+     `Ordered`. And the great thing is it can be any module that does
+     any thing, as long as it ascribes to the `Ordered` signature (and,
+     of course, also as long as it typechecks).
 
 ```scala
   // UIS = UnbalancedIntSet
@@ -454,9 +447,10 @@ following main points:
 
   - Scala upcasting type annotation = ML opaque signature ascription
 
-  - Scala trait type paraneter ~ ML opaque type but with the
-    Scala-specific benefit that we can pass in values of this type to
-    methods in the Scala trait without any special hackery
+  - Scala trait type parameter ~ ML opaque type but with the
+    Scala-specific benefits that we can pass in values of this type to
+    methods in the Scala trait without any special hackery; and also we
+    simplify the types of the module's contents
 
   - Also Scala abstract type = ML opaque type
 
@@ -477,7 +471,7 @@ in the the accompanying `Modules.scala` file, as are a few more advanced
 examples.
 
 Given the above, it seems very plausible that Scala can reliably encode
-ML-style modular programming--and in fact, probably beyond.
+ML-style modular programming--and beyond.
 
 ## References
 

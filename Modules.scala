@@ -1,5 +1,3 @@
-import scala.language.higherKinds
-
 object Modules {
   implicit class Piper[A](val x: A) extends AnyVal {
     def |>[B](f: A => B) = f(x)
@@ -50,26 +48,26 @@ object Modules {
 
   trait IntMap[A] {
     type NotFound
-    type T[_]
+    type T
 
-    val empty: T[A]
-    def get(i: Int)(x: T[A]): A
-    def insert(k: Int, v: A)(x: T[A]): T[A]
-    def remove(k: Int)(x: T[A]): T[A]
+    val empty: T
+    def get(i: Int)(x: T): A
+    def insert(k: Int, v: A)(x: T): T
+    def remove(k: Int)(x: T): T
   }
 
   trait IntFunMap[A] extends IntMap[A] {
     case class NotFound() extends Exception()
-    type T[A] = Int => A
+    type T = Int => A
 
     override val empty = (i: Int) => throw NotFound()
 
-    override def get(i: Int)(x: T[A]) = x(i)
+    override def get(i: Int)(x: T) = x(i)
 
-    override def insert(k: Int, v: A)(x: T[A]) =
+    override def insert(k: Int, v: A)(x: T) =
       (i: Int) => if (i == k) v else get(i)(x)
 
-    override def remove(k: Int)(x: T[A]) =
+    override def remove(k: Int)(x: T) =
       (i: Int) => if (i == k) empty(i) else get(i)(x)
   }
 
@@ -113,27 +111,7 @@ object Modules {
     override def inverse(t: T) = -t
   }
 
-  /*
-  Functor from input groups to a group of pairs of elements of the input
-  groups, under element-wise operation on elements of the input groups.
-  */
-  def PairG[A1, A2](G1: Group[A1], G2: Group[A2]): Group[(A1, A2)] =
-    new Group[(A1, A2)] {
-      override val empty = (G1.empty, G2.empty)
-
-      override def op(t1: T, t2: T) =
-        (G1.op(t1._1, t2._1), G2.op(t1._2, t2._2))
-
-      override def inverse(t: T) = (G1.inverse(t._1), G2.inverse(t._2))
-    }
-
-  /*
-  Group of pairs of integers under element-wise addition.
-
-  IPG = IntPairG
-  */
-  val IPG = PairG(Z, Z)
-
+  // Group of rationals under addition.
   val Rational: Group[(Int, Int)] =
     new Group[(Int, Int)] {
       /*
@@ -163,6 +141,27 @@ object Modules {
 
       override def inverse(t: T) = (-t._1, t._2) |> reduce
     }
+
+  /*
+  Functor from input groups to a group of pairs of elements of the input
+  groups, under element-wise operation on elements of the input groups.
+  */
+  def PairG[A1, A2](G1: Group[A1], G2: Group[A2]): Group[(A1, A2)] =
+    new Group[(A1, A2)] {
+      override val empty = (G1.empty, G2.empty)
+
+      override def op(t1: T, t2: T) =
+        (G1.op(t1._1, t2._1), G2.op(t1._2, t2._2))
+
+      override def inverse(t: T) = (G1.inverse(t._1), G2.inverse(t._2))
+    }
+
+  /*
+  Group of pairs of integers under element-wise addition.
+
+  IPG = IntPairG
+  */
+  val IPG = PairG(Z, Z)
 
   /*
   Functor from input group to some summary functions for the same type
