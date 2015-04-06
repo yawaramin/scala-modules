@@ -265,7 +265,7 @@ You'll get back something like:
 This is one of the elegant things about ML-style modules. Each module
 contains all definitions and _types_ it needs to operate, in a single
 bundle. Traditionally, the module's primary type is just called `T`, so
-`IntStrFn.T` has the sense that it's the `IntStFn` module's primary
+`IntStrFn.T` has the sense that it's the `IntStrFn` module's primary
 type.
 
 This type alias that you get from the module, known as an opaque type,
@@ -294,6 +294,17 @@ one of ML's most flexible methods for modular code organisation:
 _functors,_ functions which build modules. To illustrate functors, I'll
 re-implement a functorised module from James [(2014)](#jam2014), a
 functional `set` data structure. Here I show and explain my version.
+
+The steps we will take here are:
+
+  - Define an `Ordered[A]` trait
+
+  - Define a `MySet[A]` trait
+
+  - Define a function which, given an object of type `Ordered[A]`,
+    returns an object of type `MySet[A]`.
+
+That's it--that's all a functor is.
 
 ```scala
 trait Ordered[A] {
