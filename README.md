@@ -432,6 +432,23 @@ perspective, which I've marked above with the numbers:
      any thing, as long as it ascribes to the `Ordered` signature (and,
      of course, also as long as it typechecks).
 
+If you're curious about the mechanics of how functors work:
+
+  - The functor _doesn't_ define the output module as an _inheritor_ of
+    the input module. The modules don't necessarily have any nominal
+    relationship.
+
+  - Technically, the output module does hold a _reference_ to the input
+    module--but only because the former's methods _close over_ (in the
+    sense of being closures over) the latter. So this technique
+    resembles composition, except you don't compose objects together
+    yourself--you provide functors which know how to do it and let the
+    user choose exactly which ones to compose later.
+
+  - The output module knows only the signature (the upcast type) of the
+    input module. I.e., it doesn't have any knowledge of the latter's
+    internals. It relies only on what the signature allows it to know.
+
 ```scala
 // UIS = UnbalancedIntSet
 val UIS = UnbalancedSet(IntOrdered)
