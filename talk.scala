@@ -1,26 +1,24 @@
-// A functional convenience
+object Common {
+  // 2-D coordinate pair
+  type Coords = (Int, Int)
 
-object Piper {
-  implicit class PiperClass[A](val x: A) extends AnyVal {
+  // A functional convenience
+  implicit class Piper[A](val x: A) extends AnyVal {
     def |>[B](f: A => B) = f(x)
   }
 }
 
-import Piper._
-
-// 2-D coordinate pair
-
-object Coords { type T = (Int, Int) }
+import Common._
 
 // Inheritance
 
 /*
 trait Clickable {
-  def click(coords: Coords.T): Unit
+  def click(coords: Coords): Unit
 }
 
 trait Draggable extends Clickable {
-  def drag(startCoords: Coords.T, endCoords: Coords.T): Unit =
+  def drag(startCoords: Coords, endCoords: Coords): Unit =
     click(startCoords)
 }
 
@@ -30,12 +28,12 @@ trait Loggable {
 
 class GuiIcon(text: String)
   extends Clickable with Draggable with Loggable {
-  override def click(coords: Coords.T) = {
+  override def click(coords: Coords) = {
     // ...
     log("Clicked")
   }
 
-  override def drag(startCoords: Coords.T, endCoords: Coords.T) = {
+  override def drag(startCoords: Coords, endCoords: Coords) = {
     super.drag(startCoords, endCoords)
 
     // ...
@@ -53,11 +51,11 @@ class GuiIcon(text: String)
 // Typeclasses
 
 trait Clickable[A] {
-  def click(coords: Coords.T)(a: A): Unit
+  def click(coords: Coords)(a: A): Unit
 }
 
 trait Draggable[A] extends Clickable[A] {
-  def drag(startCoords: Coords.T, endCoords: Coords.T)(a: A): Unit =
+  def drag(startCoords: Coords, endCoords: Coords)(a: A): Unit =
     a |> click(startCoords)
 }
 
@@ -79,7 +77,7 @@ object GuiIcon {
 
   implicit val clickableGuiIcon: Clickable[GuiIcon] =
     new Clickable[GuiIcon] {
-      override def click(coords: Coords.T)(guiIcon: GuiIcon) = {
+      override def click(coords: Coords)(guiIcon: GuiIcon) = {
         // ...
         guiIcon |> loggableGuiIcon.log("Clicked")
       }
@@ -87,11 +85,11 @@ object GuiIcon {
 
   implicit val draggableGuiIcon: Draggable[GuiIcon] =
     new Draggable[GuiIcon] {
-      override def click(coords: Coords.T)(guiIcon: GuiIcon) =
+      override def click(coords: Coords)(guiIcon: GuiIcon) =
         guiIcon |> clickableGuiIcon.click(coords)
 
       override def drag(
-        startCoords: Coords.T, endCoords: Coords.T)(guiIcon: GuiIcon) = {
+        startCoords: Coords, endCoords: Coords)(guiIcon: GuiIcon) = {
         guiIcon |> super.drag(startCoords, endCoords)
 
         // ...
