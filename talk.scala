@@ -11,7 +11,6 @@ object Common {
 import Common._
 
 object Inheretic {
-  trait Loggable { def log(msg: String): Unit }
   trait Clickable { def click(coords: Coords): Unit }
 
   trait Draggable extends Clickable {
@@ -19,24 +18,13 @@ object Inheretic {
       click(startCoords)
   }
 
-  class GuiIcon(text: String)
-    extends Clickable with Draggable with Loggable {
-    override def log(msg: String) = {
-      print(text)
-      print(": ")
-      println(msg)
-    }
-
-    override def click(coords: Coords) = {
-      // ...
-      log("Clicked")
-    }
+  case class GuiIcon(text: String)
+    extends Clickable with Draggable {
+    override def click(coords: Coords) = println("Clicked")
 
     override def drag(startCoords: Coords, endCoords: Coords) = {
       super.drag(startCoords, endCoords)
-
-      // ...
-      log("Dragged")
+      println("Dragged")
     }
   }
 
@@ -44,10 +32,14 @@ object Inheretic {
     guiIcon.drag(0 -> 0, 1 -> 1)
     guiIcon.click(1 -> 1)
   }
+
+  def run = {
+    val guiIcon = GuiIcon("Recycle Bin")
+    dragThenClick(guiIcon)
+  }
 }
 
 object Typeclassy {
-  trait Loggable[A] { def log(msg: String)(a: A): Unit }
   trait Clickable[A] { def click(coords: Coords)(a: A): Unit }
 
   trait Draggable[A] extends Clickable[A] {
@@ -95,6 +87,11 @@ object Typeclassy {
     guiIcon |> DG.drag(0 -> 0, 1 -> 1)
     guiIcon |> DG.click(1 -> 1)
   }
+
+  def run = {
+    val guiIcon = GuiIcon("Recycle Bin")
+    dragThenClick(guiIcon)
+  }
 }
 
 object Modular {
@@ -109,7 +106,7 @@ object Modular {
   }
 
   object Clickable {
-    def Mk[A](LA: Loggable[A]): Clickable[A] =
+    def apply[A](LA: Loggable[A]): Clickable[A] =
       new Clickable[A] {
         override def click(coords: Coords)(t: T) = {
           // ...
@@ -124,7 +121,7 @@ object Modular {
   }
 
   object Draggable {
-    def Mk[A](LA: Loggable[A], CA: Clickable[A]): Draggable[A] =
+    def apply[A](LA: Loggable[A], CA: Clickable[A]): Draggable[A] =
       new Draggable[A] {
         override def drag(
           startCoords: Coords, endCoords: Coords)(t: T) = {
@@ -142,7 +139,7 @@ object Modular {
   }
 
   object GuiAble {
-    def Mk[A](CA: Clickable[A], DA: Draggable[A]): GuiAble[A] =
+    def apply[A](CA: Clickable[A], DA: Draggable[A]): GuiAble[A] =
       new GuiAble[A] {
         override def dragThenClick(t: T) = {
           t |> DA.drag(0 -> 0, 1 -> 1)
@@ -163,9 +160,14 @@ object Modular {
         }
       }
 
-    val clickable = Clickable.Mk(loggable)
-    val draggable = Draggable.Mk(loggable, clickable)
-    val guiable = GuiAble.Mk(clickable, draggable)
+    val clickable = Clickable(loggable)
+    val defaultDraggable = Draggable(loggable, clickable)
+    val guiable = GuiAble(clickable, draggable)
+  }
+
+  def run = {
+    val guiIcon = GuiIcon("Recycle Bin")
+    GuiIcon.guiable.dragThenClick(guiIcon)
   }
 }
 
