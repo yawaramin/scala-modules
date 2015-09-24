@@ -2,7 +2,7 @@ object Common {
   // 2-D coordinate pair
   type Coords = (Int, Int)
 
-  // A functional convenience
+  // Pipe-forward (reverse function application like in MLs)
   implicit class Piper[A](val x: A) extends AnyVal {
     def |>[B](f: A => B) = f(x)
   }
@@ -111,32 +111,23 @@ object Modular {
       }
   }
 
-  trait GuiAble[A] {
-    type T = A
-    def dragThenClick(t: T): Unit
-  }
-
-  object GuiAble {
-    def apply[A](CA: Clickable[A], DA: Draggable[A]): GuiAble[A] =
-      new GuiAble[A] {
-        override def dragThenClick(t: T) = {
-          t |> DA.drag(0 -> 0, 1 -> 1)
-          t |> CA.click(1 -> 1)
-        }
-      }
-  }
-
   case class GuiIcon(text: String)
 
   object GuiIcon {
     val clickable = Clickable[GuiIcon]
     val draggable = Draggable(clickable)
-    val guiable = GuiAble(clickable, draggable)
+  }
+
+  def dragThenClick(guiIcon: GuiIcon) = {
+    import GuiIcon._
+
+    guiIcon |> draggable.drag(0 -> 0, 1 -> 1)
+    guiIcon |> clickable.click(1 -> 1)
   }
 
   def run = {
     val guiIcon = GuiIcon("Recycle Bin")
-    GuiIcon.guiable.dragThenClick(guiIcon)
+    dragThenClick(guiIcon)
   }
 }
 
