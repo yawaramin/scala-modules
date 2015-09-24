@@ -11,10 +11,10 @@ object Common {
 import Common._
 
 object Inheretic {
-  trait Clickable { def click(coords: Coords): Unit }
+  trait Clickable { def click(coords: Coords) }
 
   trait Draggable extends Clickable {
-    def drag(startCoords: Coords, endCoords: Coords): Unit =
+    def drag(startCoords: Coords, endCoords: Coords) =
       click(startCoords)
   }
 
@@ -40,10 +40,10 @@ object Inheretic {
 }
 
 object Typeclassy {
-  trait Clickable[A] { def click(coords: Coords)(a: A): Unit }
+  trait Clickable[A] { def click(coords: Coords)(a: A) }
 
   trait Draggable[A] extends Clickable[A] {
-    def drag(startCoords: Coords, endCoords: Coords)(a: A): Unit =
+    def drag(startCoords: Coords, endCoords: Coords)(a: A) =
       a |> click(startCoords)
   }
 
@@ -87,7 +87,7 @@ object Typeclassy {
 object Modular {
   trait Clickable[A] {
     type T = A
-    def click(coords: Coords)(t: T): Unit
+    def click(coords: Coords)(t: T)
   }
 
   object Clickable {
@@ -100,7 +100,7 @@ object Modular {
 
   trait Draggable[A] {
     type T = A
-    def drag(startCoords: Coords, endCoords: Coords)(t: T): Unit
+    def drag(startCoords: Coords, endCoords: Coords)(t: T)
   }
 
   object Draggable {
