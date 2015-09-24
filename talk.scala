@@ -107,10 +107,8 @@ object Modular {
     def apply[A](CA: Clickable[A]): Draggable[A] =
       new Draggable[A] {
         override def drag(
-          startCoords: Coords, endCoords: Coords)(t: T) = {
+          startCoords: Coords, endCoords: Coords)(t: T) =
           t |> CA.click(startCoords)
-          println(s"Dragged to (${endCoords._1}, ${endCoords._2})")
-        }
       }
   }
 
@@ -118,7 +116,19 @@ object Modular {
 
   object GuiIcon {
     val clickable = Clickable[GuiIcon]
-    val draggable = Draggable(clickable)
+
+    val draggable: Draggable[GuiIcon] =
+      new Draggable[GuiIcon] {
+        val defaultDraggable = Draggable(clickable)
+
+        override def drag(
+          startCoords: Coords, endCoords: Coords)(t: T) = {
+          t |> defaultDraggable.drag(startCoords, endCoords)
+
+          println(
+            s"${t.text} Dragged to (${endCoords._1}, ${endCoords._2})")
+        }
+      }
   }
 
   def dragThenClick(guiIcon: GuiIcon) = {
