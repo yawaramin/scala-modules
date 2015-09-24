@@ -50,34 +50,22 @@ object Typeclassy {
   case class GuiIcon(text: String)
 
   object GuiIcon {
-    implicit val loggableGuiIcon: Loggable[GuiIcon] =
-      new Loggable[GuiIcon] {
-        override def log(msg: String)(guiIcon: GuiIcon) = {
-          print(guiIcon.text)
-          print(": ")
-          println(msg)
-        }
-      }
-
-    implicit val clickableGuiIcon: Clickable[GuiIcon] =
+    implicit val clickable: Clickable[GuiIcon] =
       new Clickable[GuiIcon] {
-        override def click(coords: Coords)(guiIcon: GuiIcon) = {
-          // ...
-          guiIcon |> loggableGuiIcon.log("Clicked")
-        }
+        override def click(coords: Coords)(guiIcon: GuiIcon) =
+          println("Clicked")
       }
 
-    implicit val draggableGuiIcon: Draggable[GuiIcon] =
+    implicit val draggable: Draggable[GuiIcon] =
       new Draggable[GuiIcon] {
         override def click(coords: Coords)(guiIcon: GuiIcon) =
-          guiIcon |> clickableGuiIcon.click(coords)
+          guiIcon |> clickable.click(coords)
 
         override def drag(
           startCoords: Coords, endCoords: Coords)(guiIcon: GuiIcon) = {
           guiIcon |> super.drag(startCoords, endCoords)
 
-          // ...
-          guiIcon |> loggableGuiIcon.log("Dragged")
+          println("Dragged")
         }
       }
   }
@@ -95,23 +83,15 @@ object Typeclassy {
 }
 
 object Modular {
-  trait Loggable[A] {
-    type T = A
-    def log(msg: String)(t: T): Unit
-  }
-
   trait Clickable[A] {
     type T = A
     def click(coords: Coords)(t: T): Unit
   }
 
   object Clickable {
-    def apply[A](LA: Loggable[A]): Clickable[A] =
+    def apply[A]: Clickable[A] =
       new Clickable[A] {
-        override def click(coords: Coords)(t: T) = {
-          // ...
-          t |> LA.log("Clicked")
-        }
+        override def click(coords: Coords)(t: T) = println("Clicked")
       }
   }
 
@@ -121,14 +101,12 @@ object Modular {
   }
 
   object Draggable {
-    def apply[A](LA: Loggable[A], CA: Clickable[A]): Draggable[A] =
+    def apply[A](CA: Clickable[A]): Draggable[A] =
       new Draggable[A] {
         override def drag(
           startCoords: Coords, endCoords: Coords)(t: T) = {
           t |> CA.click(startCoords)
-
-          // ...
-          t |> LA.log("Dragged")
+          println("Dragged")
         }
       }
   }
@@ -151,17 +129,8 @@ object Modular {
   case class GuiIcon(text: String)
 
   object GuiIcon {
-    val loggable: Loggable[GuiIcon] =
-      new Loggable[GuiIcon] {
-        override def log(msg: String)(t: T) = {
-          print(t.text)
-          print(": ")
-          println(msg)
-        }
-      }
-
-    val clickable = Clickable(loggable)
-    val defaultDraggable = Draggable(loggable, clickable)
+    val clickable = Clickable[GuiIcon]
+    val draggable = Draggable(clickable)
     val guiable = GuiAble(clickable, draggable)
   }
 
