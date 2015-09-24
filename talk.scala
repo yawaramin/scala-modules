@@ -18,13 +18,13 @@ object Inheretic {
       click(startCoords)
   }
 
-  case class GuiIcon(text: String)
-    extends Clickable with Draggable {
-    override def click(coords: Coords) = println("Clicked")
+  case class GuiIcon(text: String) extends Draggable {
+    override def click(coords: Coords) =
+      println(s"$text Clicked at (${coords._1}, ${coords._2})")
 
     override def drag(startCoords: Coords, endCoords: Coords) = {
       super.drag(startCoords, endCoords)
-      println("Dragged")
+      println(s"$text Dragged to (${endCoords._1}, ${endCoords._2})")
     }
   }
 
@@ -53,7 +53,8 @@ object Typeclassy {
     implicit val clickable: Clickable[GuiIcon] =
       new Clickable[GuiIcon] {
         override def click(coords: Coords)(guiIcon: GuiIcon) =
-          println("Clicked")
+          println(
+            s"${guiIcon.text} Clicked at (${coords._1}, ${coords._2})")
       }
 
     implicit val draggable: Draggable[GuiIcon] =
@@ -65,7 +66,8 @@ object Typeclassy {
           startCoords: Coords, endCoords: Coords)(guiIcon: GuiIcon) = {
           guiIcon |> super.drag(startCoords, endCoords)
 
-          println("Dragged")
+          println(
+            s"${guiIcon.text} Dragged to (${endCoords._1}, ${endCoords._2})")
         }
       }
   }
@@ -91,7 +93,8 @@ object Modular {
   object Clickable {
     def apply[A]: Clickable[A] =
       new Clickable[A] {
-        override def click(coords: Coords)(t: T) = println("Clicked")
+        override def click(coords: Coords)(t: T) =
+          println(s"Clicked at (${coords._1}, ${coords._2})")
       }
   }
 
@@ -106,7 +109,7 @@ object Modular {
         override def drag(
           startCoords: Coords, endCoords: Coords)(t: T) = {
           t |> CA.click(startCoords)
-          println("Dragged")
+          println(s"Dragged to (${endCoords._1}, ${endCoords._2})")
         }
       }
   }
